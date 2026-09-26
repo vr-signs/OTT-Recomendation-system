@@ -220,6 +220,11 @@ html, body, [class*="css"] {{ font-family:-apple-system,BlinkMacSystemFont,"SF P
 body:has(.landing-header-marker) .block-container,
 body:has(.landing-header-marker) [data-testid="stAppViewContainer"],
 body:has(.landing-header-marker) .main {{ max-width:100% !important;padding:0 !important;margin:0 !important;overflow-x:hidden !important; }}
+/* The Streamlit utility header must disappear into the landing canvas. */
+body:has(.landing-header-marker) [data-testid="stHeader"],
+body:has(.landing-header-marker) [data-testid="stToolbar"],
+body:has(.landing-header-marker) [data-testid="stDecoration"] {{ background:transparent !important;border:0 !important;box-shadow:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important; }}
+body:has(.landing-header-marker) [data-testid="stVerticalBlock"]:has(.st-key-landing_top_nav) {{ gap:0 !important; }}
 .st-key-landing_top_nav,
 .st-key-liquid_top_nav:has(.landing-header-marker) {{ position:fixed !important;top:0 !important;left:0 !important;transform:none !important;width:100% !important;padding:22px clamp(24px,5vw,68px) !important;border:0 !important;border-top:0 !important;border-bottom:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;pointer-events:none !important;z-index:999999 !important; }}
 .st-key-landing_top_nav [data-testid="stHorizontalBlock"],
@@ -337,13 +342,13 @@ body:has(.landing-header-marker) .st-key-landing_hero:before {{ top:clamp(180px,
 .hero-signal-card {{ position:absolute;z-index:30;top:4%;right:2%;padding:12px 15px;border:1px solid var(--glass-border);border-radius:16px;background:var(--glass-bg);box-shadow:0 14px 30px rgba(10,20,40,.12),inset 0 1px 0 var(--glass-inset);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);transition:transform 260ms cubic-bezier(.2,.8,.2,1),box-shadow 260ms ease;animation:float-card 6s ease-in-out infinite,poster-reveal 720ms 180ms cubic-bezier(.2,.8,.2,1) both; }}
 .hero-signal-card span {{ display:block;color:var(--muted);font-size:.61rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase; }}
 .hero-signal-card strong {{ display:block;margin-top:4px;color:var(--ink);font-size:.88rem; }}
-.hero-match-badge {{ position:absolute;z-index:30;left:0;bottom:4%;padding:13px 15px;border:1px solid var(--glass-border);border-radius:17px;background:var(--glass-bg);color:var(--ink);box-shadow:0 16px 34px rgba(10,20,40,.14),inset 0 1px 0 var(--glass-inset);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);transition:transform 260ms cubic-bezier(.2,.8,.2,1),box-shadow 260ms ease;animation:float-card 7.5s ease-in-out -3s infinite,poster-reveal 760ms 300ms cubic-bezier(.2,.8,.2,1) both; }}
+.hero-match-badge {{ position:absolute;z-index:30;top:4%;right:calc(2% + 230px);left:auto;bottom:auto;padding:13px 15px;border:1px solid var(--glass-border);border-radius:17px;background:var(--glass-bg);color:var(--ink);box-shadow:0 16px 34px rgba(10,20,40,.14),inset 0 1px 0 var(--glass-inset);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);transition:transform 260ms cubic-bezier(.2,.8,.2,1),box-shadow 260ms ease;animation:float-card 7.5s ease-in-out -3s infinite,poster-reveal 760ms 300ms cubic-bezier(.2,.8,.2,1) both; }}
 .hero-match-badge span {{ display:block;color:var(--muted);font-size:.61rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase; }}
 .hero-match-badge strong {{ display:block;margin-top:3px;font-size:.84rem; }}
-.movie-orbit-stage {{ position:absolute;inset:0;width:100%;height:100%;pointer-events:auto;z-index:10; }}
-.movie-orbit-stage:hover .hero-orbital-card,
-.landing-visual:hover .hero-orbital-card {{ animation-play-state:paused !important; }}
-.hero-orbital-card {{ position:absolute;top:50%;left:50%;width:120px;height:156px;border-radius:18px;overflow:hidden;padding:11px 12px;display:flex;flex-direction:column;justify-content:space-between;color:#ffffff;border:1px solid rgba(255,255,255,.42);background:linear-gradient(155deg,var(--poster-accent,#0071e3),#0b1528 88%);box-shadow:0 22px 48px rgba(6,14,30,.30),inset 0 1px 0 rgba(255,255,255,.52);cursor:pointer;user-select:none;will-change:transform,opacity;transition:box-shadow 260ms ease,border-color 260ms ease,filter 260ms ease; }}
+.movie-orbit-stage {{ position:absolute;inset:4% 0 3%;width:100%;height:auto;pointer-events:auto;z-index:10;isolation:isolate; }}
+.movie-orbit-stage:before {{ content:"";position:absolute;z-index:-1;top:2%;left:10%;width:80%;height:48%;border:1px solid rgba(72,157,247,.18);border-radius:50%;background:radial-gradient(ellipse at 50% 82%,rgba(78,168,255,.14),transparent 66%);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),0 0 38px rgba(84,164,245,.07);transform:rotate(-10deg);pointer-events:none; }}
+.movie-orbit-stage:hover .hero-orbital-card {{ animation-play-state:paused !important; }}
+.hero-orbital-card {{ position:absolute;top:50%;left:50%;width:120px;height:156px;border-radius:18px;overflow:hidden;padding:11px 12px;display:flex;flex-direction:column;justify-content:space-between;color:#ffffff;border:1px solid rgba(255,255,255,.42);background:linear-gradient(155deg,var(--poster-accent,#0071e3),#0b1528 88%);box-shadow:0 22px 48px rgba(6,14,30,.30),inset 0 1px 0 rgba(255,255,255,.52);cursor:pointer;user-select:none;will-change:left,top,transform,opacity;transition:box-shadow 260ms ease,border-color 260ms ease,filter 260ms ease;transform-origin:center center; }}
 .hero-orbital-card:before {{ content:"";position:absolute;inset:0;background:linear-gradient(150deg,rgba(255,255,255,.32) 0%,transparent 40%,rgba(2,6,18,.56) 100%);pointer-events:none; }}
 .hero-orbital-card:after {{ content:"";position:absolute;width:136px;height:136px;right:-45px;top:-45px;border:1px solid rgba(255,255,255,.28);border-radius:50%;box-shadow:0 0 0 11px rgba(255,255,255,.06),0 0 0 26px rgba(255,255,255,.03);pointer-events:none; }}
 .hero-orbital-card:hover {{ z-index:60 !important;filter:brightness(1.12);box-shadow:0 32px 64px rgba(0,113,227,.40),inset 0 1px 0 rgba(255,255,255,.7) !important;border-color:rgba(255,255,255,.85) !important; }}
@@ -544,7 +549,7 @@ body:has(.landing-header-marker) .streamglass-footer {{ position:fixed;z-index:4
     .hero-orbital-card .poster-genre {{ font-size:.45rem; }}
     .hero-orbital-card .poster-monogram {{ font-size:1.8rem; }}
     .hero-signal-card {{ top:0;right:0; }}
-    .hero-match-badge {{ bottom:0; }}
+    .hero-match-badge {{ top:18%;right:auto;left:0;bottom:auto; }}
     body:has(.landing-header-marker) .st-key-landing_hero {{ min-height:100svh;margin:0 !important;padding:90px 20px 58px !important;border:0 !important;border-radius:0 !important; }}
     .page-header {{ margin-bottom:26px; }}
     .page-header h1 {{ font-size:2.35rem; }}
@@ -739,44 +744,29 @@ if st.session_state.current_module == "landing":
     num_movies = len(hero_titles)
     total_orbit_duration = 52.0  # seconds for full cinematic 360-degree orbital revolution
 
-    # Build continuous orbital keyframes across all movies
+    # Each title follows the same responsive ellipse.  Staggered negative delays
+    # spread the existing catalog around it, so every title returns naturally.
     steps = 40
     keyframe_stops = []
     for k in range(steps + 1):
         pct = round((k / steps) * 100, 2)
         u = k / steps
-        theta = -math.pi / 3 + u * 2 * math.pi
+        theta = -math.pi / 2 + u * 2 * math.pi
         cos_val = round(math.cos(theta), 4)
         sin_val = round(math.sin(theta), 4)
 
-        if u <= 0.16:
-            prog = u / 0.16
-            opacity = round(0.0 + 0.88 * prog, 3)
-            scale = round(0.76 + 0.22 * prog, 3)
-            z_idx = int(8 + 10 * prog)
-            pt = "auto" if opacity > 0.3 else "none"
-        elif u <= 0.62:
-            prog = (u - 0.16) / 0.46
-            peak = math.sin(prog * math.pi)
-            opacity = round(0.88 + 0.12 * peak, 3)
-            scale = round(0.96 + 0.12 * peak, 3)
-            z_idx = int(18 + 7 * peak)
-            pt = "auto"
-        elif u <= 0.80:
-            prog = (u - 0.62) / 0.18
-            opacity = round(0.88 * (1.0 - prog), 3)
-            scale = round(0.96 - 0.22 * prog, 3)
-            z_idx = int(14 * (1.0 - prog))
-            pt = "auto" if opacity > 0.3 else "none"
-        else:
-            opacity = 0.0
-            scale = 0.72
-            z_idx = 1
-            pt = "none"
-
-        tilt = round(-12.0 * math.cos(theta), 1)
+        # Lower positions sit closest to the viewer; upper positions recede.
+        # The values remain visible around the complete circle rather than
+        # behaving as a row or a finite three-card carousel.
+        depth = (sin_val + 1.0) / 2.0
+        opacity = round(0.08 + 0.92 * (depth ** 2.7), 3)
+        scale = round(0.62 + 0.43 * depth, 3)
+        z_idx = int(4 + 28 * depth)
+        x_pos = round(50 + 37 * cos_val, 3)
+        y_pos = round(50 + 36 * sin_val, 3)
+        tilt = round(-9.0 * cos_val * (0.65 + 0.35 * depth), 1)
         keyframe_stops.append(
-            f"        {pct}% {{{{ transform: translate(calc(var(--orbit-rx, 205px) * {cos_val} - 50%), calc(var(--orbit-ry, 175px) * {sin_val} - 50%)) scale({scale}) rotate({tilt}deg); opacity: {opacity}; z-index: {z_idx}; pointer-events: {pt}; }}}}"
+            f"        {pct}% {{ left:{x_pos}%; top:{y_pos}%; transform:translate(-50%,-50%) scale({scale}) rotate({tilt}deg); opacity:{opacity}; z-index:{z_idx}; }}"
         )
     keyframe_css = "\n".join(keyframe_stops)
 
