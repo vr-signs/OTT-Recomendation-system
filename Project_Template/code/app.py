@@ -3,6 +3,7 @@
 import os
 import sys
 import html
+import re
 import sqlite3
 import pandas as pd
 import plotly.express as px
@@ -17,8 +18,12 @@ import recommender
 
 st.set_page_config(page_title="StreamGlass", page_icon="▷", layout="wide", initial_sidebar_state="collapsed")
 
-if "app_theme" not in st.session_state:
-    st.session_state.app_theme = "System"
+THEME_DEFAULT_VERSION = 1
+if st.session_state.get("theme_default_version") != THEME_DEFAULT_VERSION:
+    st.session_state.app_theme = "Light"
+    st.session_state.theme_default_version = THEME_DEFAULT_VERSION
+elif "app_theme" not in st.session_state:
+    st.session_state.app_theme = "Light"
 
 def get_apple_ui_css(theme_mode):
     light_vars = """
@@ -112,15 +117,26 @@ def get_apple_ui_css(theme_mode):
 html, body, [class*="css"] {{ font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",sans-serif !important; color:var(--ink) !important; }}
 [data-testid="stHeader"] {{ display:none !important; height:0 !important; pointer-events:none !important; }}
 [data-testid="stToolbar"], [data-testid="stDecoration"] {{ visibility:hidden !important; display:none !important; }}
-.block-container {{ max-width:1220px !important; padding:7.9rem 28px 3.5rem !important; }}
+.block-container {{ max-width:1220px !important; padding:7.2rem 28px 3.5rem !important; }}
 
 /* Glassmorphism navigation & theme bar */
-.st-key-liquid_top_nav {{ position:fixed !important; top:18px !important; left:50% !important; transform:translateX(-50%) !important; width:min(980px,calc(100vw - 32px)) !important; z-index:999999 !important; padding:6px 8px !important; border:1px solid var(--glass-border) !important; border-radius:22px !important; background:var(--glass-bg) !important; box-shadow:0 14px 34px var(--glass-shadow),inset 0 1px 0 var(--glass-inset) !important; backdrop-filter:blur(28px) saturate(135%) !important; -webkit-backdrop-filter:blur(28px) saturate(135%) !important; pointer-events:auto !important; }}
+.st-key-liquid_top_nav {{ position:fixed !important; top:14px !important; left:50% !important; transform:translateX(-50%) !important; width:min(1180px,calc(100vw - 40px)) !important; z-index:999999 !important; padding:7px 10px !important; border:1px solid var(--glass-border) !important; border-radius:24px !important; background:var(--glass-bg) !important; box-shadow:0 14px 34px var(--glass-shadow),inset 0 1px 0 var(--glass-inset) !important; backdrop-filter:blur(30px) saturate(155%) !important; -webkit-backdrop-filter:blur(30px) saturate(155%) !important; pointer-events:auto !important; }}
 .st-key-liquid_top_nav [data-testid="stWidgetLabel"] {{ display:none !important; }}
  .st-key-liquid_top_nav [data-testid="stVerticalBlock"],
  .st-key-liquid_top_nav [data-testid="stHorizontalBlock"] {{ gap:12px !important; align-items:center !important; width:100% !important; }}
 .st-key-liquid_top_nav [data-testid="stColumn"] {{ display:flex !important; align-items:center !important; min-width:0 !important; }}
-.st-key-liquid_top_nav [data-testid="stColumn"]:last-child {{ border-left:1px solid var(--line-soft) !important; padding-left:8px !important; }}
+.st-key-liquid_top_nav [data-testid="stColumn"]:nth-child(3) {{ border-left:1px solid var(--line-soft) !important; padding-left:8px !important; }}
+.nav-brand {{ display:flex;align-items:center;gap:10px;white-space:nowrap;color:var(--ink);font-size:.92rem;font-weight:740;letter-spacing:-.025em; }}
+.nav-brand .brand-mark {{ width:30px;height:30px;border-radius:10px;display:inline-grid;place-items:center;background:linear-gradient(145deg,#2997ff,#1762c4);color:#fff;font-size:.65rem;font-weight:800;letter-spacing:-.04em;box-shadow:0 5px 14px rgba(0,113,227,.24),inset 0 1px 0 rgba(255,255,255,.45); }}
+.st-key-liquid_top_nav .st-key-liquid_brand button {{ min-height:32px !important;padding:0 1px !important;border:0 !important;border-radius:10px !important;background:transparent !important;color:var(--ink) !important;font-size:.92rem !important;font-weight:740 !important;letter-spacing:-.025em !important;box-shadow:none !important;display:flex !important;align-items:center !important;gap:10px !important;white-space:nowrap !important; }}
+.st-key-liquid_top_nav .st-key-liquid_brand button:before {{ content:"SG";width:30px;height:30px;border-radius:10px;display:inline-grid;place-items:center;background:linear-gradient(145deg,#2997ff,#1762c4);color:#fff;font-size:.65rem;font-weight:800;letter-spacing:-.04em;box-shadow:0 5px 14px rgba(0,113,227,.24),inset 0 1px 0 rgba(255,255,255,.45); }}
+.st-key-liquid_top_nav .st-key-liquid_brand button:hover {{ background:transparent !important;transform:translateY(-1px) !important;filter:brightness(1.06) !important; }}
+.landing-header-marker {{ display:none !important; }}
+.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stHorizontalBlock"] {{ display:flex !important;align-items:center !important;gap:12px !important; }}
+.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:nth-child(1) {{ flex:1 1 auto !important;width:auto !important; }}
+.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:nth-child(2),
+.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:nth-child(3) {{ display:none !important; }}
+.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:nth-child(4) {{ flex:0 0 auto !important;width:auto !important;border-left:0 !important;padding-left:0 !important; }}
 .st-key-liquid_top_nav > [data-testid="stElementContainer"],
 .st-key-liquid_top_nav [data-testid="stRadio"] {{ width:100% !important; margin:0 !important; padding:0 !important; }}
  .st-key-liquid_top_nav [data-testid="stRadioGroup"],
@@ -163,6 +179,8 @@ html, body, [class*="css"] {{ font-family:-apple-system,BlinkMacSystemFont,"SF P
 .st-key-liquid_top_nav .react-aria-RadioField:has(input:checked) [data-testid="stRadioOption"] span {{ color:var(--blue) !important; font-weight:700 !important; }}
 .st-key-liquid_top_nav [data-testid="stRadioOption"]:focus-visible {{ outline:2px solid var(--blue) !important;outline-offset:2px !important; }}
 .st-key-liquid_top_nav [data-testid="stRadioOption"]:active {{ transform:scale(.97) !important; }}
+.st-key-liquid_top_nav .st-key-liquid_login button {{ min-height:36px !important;padding:0 15px !important;border:1px solid rgba(0,113,227,.24) !important;border-radius:13px !important;background:linear-gradient(135deg,#1683f5,#0066d5) !important;color:#fff !important;font-size:.78rem !important;font-weight:700 !important;white-space:nowrap !important;box-shadow:0 6px 16px rgba(0,113,227,.20),inset 0 1px 0 rgba(255,255,255,.3) !important; }}
+.st-key-liquid_top_nav .st-key-liquid_login button:hover {{ transform:translateY(-1px) !important;filter:brightness(1.06) !important;box-shadow:0 9px 20px rgba(0,113,227,.27),inset 0 1px 0 rgba(255,255,255,.35) !important; }}
 @media (hover:hover) and (pointer:fine) {{
     .st-key-liquid_top_nav [data-testid="stRadioOption"]:hover {{ background:var(--hover-bg) !important;transform:translateY(-1px) scale(1.015) !important;box-shadow:0 5px 12px rgba(30,30,35,.10) !important; }}
     .st-key-liquid_top_nav [data-testid="stRadioOption"]:hover p,
@@ -180,6 +198,87 @@ html, body, [class*="css"] {{ font-family:-apple-system,BlinkMacSystemFont,"SF P
 .section-heading {{ display:flex;align-items:end;justify-content:space-between;gap:18px;margin:39px 0 14px; }}
 .section-heading h2 {{ margin:0;font-size:1.34rem;letter-spacing:-.035em;line-height:1.15;font-weight:700;color:var(--ink); }}
 .section-heading p {{ margin:4px 0 0;color:var(--muted);font-size:.88rem; }}
+
+/* One-screen welcome surface: a live-feeling catalog and recommendation signal map. */
+.st-key-landing_hero {{ position:relative;isolation:isolate;overflow:hidden;min-height:clamp(520px,calc(100svh - 190px),700px);margin:-20px 0 0;padding:clamp(26px,4vw,54px);border:1px solid var(--line-soft);border-radius:32px;background:radial-gradient(ellipse at 78% 52%,rgba(0,113,227,.13),transparent 35%),radial-gradient(ellipse at 15% 2%,rgba(111,139,255,.10),transparent 31%),linear-gradient(135deg,color-mix(in srgb,var(--surface) 76%,transparent),color-mix(in srgb,var(--canvas) 76%,transparent));box-shadow:0 24px 70px rgba(20,30,55,.07),inset 0 1px 0 rgba(255,255,255,.58);backdrop-filter:blur(16px) saturate(145%);-webkit-backdrop-filter:blur(16px) saturate(145%); }}
+.st-key-landing_hero:before {{ content:"";position:absolute;z-index:-1;width:390px;height:390px;right:-145px;top:-170px;border:1px solid rgba(0,113,227,.12);border-radius:50%;box-shadow:0 0 0 36px rgba(0,113,227,.025),0 0 0 82px rgba(0,113,227,.018);animation:orbit-drift 24s linear infinite; }}
+.st-key-landing_hero [data-testid="stHorizontalBlock"] {{ min-height:100%;align-items:center !important;gap:clamp(24px,4vw,64px) !important; }}
+.landing-copy {{ max-width:580px;padding:14px 0 34px;animation:landing-reveal 720ms cubic-bezier(.2,.8,.2,1) both; }}
+.landing-kicker {{ display:inline-flex;align-items:center;gap:9px;padding:7px 11px;border:1px solid var(--line-soft);border-radius:999px;background:color-mix(in srgb,var(--surface) 74%,transparent);color:var(--muted);font-size:.69rem;font-weight:730;letter-spacing:.11em;text-transform:uppercase;transition:translate 260ms cubic-bezier(.2,.8,.2,1),border-color 260ms ease,box-shadow 260ms ease;animation:landing-line 620ms 120ms cubic-bezier(.2,.8,.2,1) both; }}
+.landing-live-dot {{ width:7px;height:7px;border-radius:50%;background:#30d158;box-shadow:0 0 0 4px rgba(48,209,88,.14);animation:signal-pulse 2.4s ease-out infinite; }}
+.landing-copy h1 {{ max-width:600px;margin:21px 0 16px;color:var(--ink);font-size:clamp(2.8rem,5.5vw,5.25rem);line-height:.99;letter-spacing:-.067em;font-weight:760;transition:translate 300ms cubic-bezier(.2,.8,.2,1),filter 300ms ease;text-wrap:balance;animation:landing-line 720ms 190ms cubic-bezier(.2,.8,.2,1) both; }}
+.landing-copy h1 > [data-heading-text] {{ color:var(--ink) !important; }}
+.landing-copy h1 > [data-heading-text] > span {{ color:var(--blue) !important; }}
+.landing-copy p {{ max-width:520px;color:var(--muted);font-size:1.02rem;line-height:1.62;transition:translate 260ms cubic-bezier(.2,.8,.2,1),color 260ms ease;animation:landing-line 720ms 270ms cubic-bezier(.2,.8,.2,1) both; }}
+.landing-proofline {{ display:flex;flex-wrap:wrap;gap:8px;margin-top:22px;animation:landing-line 720ms 350ms cubic-bezier(.2,.8,.2,1) both; }}
+.landing-proofline span {{ padding:7px 10px;border:1px solid var(--line-soft);border-radius:999px;background:color-mix(in srgb,var(--surface) 74%,transparent);color:var(--ink-soft);font-size:.72rem;font-weight:620;transition:translate 240ms cubic-bezier(.2,.8,.2,1),background 240ms ease,border-color 240ms ease,box-shadow 240ms ease; }}
+.landing-stats {{ display:flex;gap:24px;margin-top:29px;animation:landing-line 720ms 430ms cubic-bezier(.2,.8,.2,1) both; }}
+.landing-stat {{ display:flex;flex-direction:column;gap:3px;padding:5px 7px;border-radius:12px;transition:translate 240ms cubic-bezier(.2,.8,.2,1),background 240ms ease,box-shadow 240ms ease; }}
+.landing-stat strong {{ color:var(--ink);font-size:1.1rem;letter-spacing:-.04em; }}
+.landing-stat span {{ color:var(--muted);font-size:.68rem; }}
+.landing-visual {{ position:relative;min-height:420px;display:grid;place-items:center;perspective:1200px;animation:landing-reveal 900ms 100ms cubic-bezier(.2,.8,.2,1) both; }}
+.signal-map {{ position:absolute;z-index:1;width:112%;height:105%;inset:-2% -6%;overflow:visible;opacity:.9;transition:opacity 360ms ease,filter 360ms ease; }}
+.signal-map circle {{ fill:#48a6ff;filter:drop-shadow(0 0 7px rgba(41,151,255,.78)); }}
+.signal-orbit {{ position:absolute;width:min(92%,440px);aspect-ratio:1;border:1px solid rgba(0,113,227,.18);border-radius:50%;transform:rotate(-14deg);box-shadow:0 0 0 35px rgba(0,113,227,.025),0 0 0 76px rgba(0,113,227,.018);transition:scale 420ms cubic-bezier(.2,.8,.2,1),filter 420ms ease;animation:orbit-drift 32s linear infinite; }}
+.signal-orbit:before,.signal-orbit:after {{ content:"";position:absolute;width:10px;height:10px;border-radius:50%;background:#54a7ff;box-shadow:0 0 20px rgba(41,151,255,.8); }}
+.signal-orbit:before {{ top:14%;left:18%; }}
+.signal-orbit:after {{ right:8%;bottom:28%;width:7px;height:7px;background:#55d6ad; }}
+.hero-signal-card {{ position:absolute;z-index:3;top:5%;right:2%;padding:12px 15px;border:1px solid var(--glass-border);border-radius:16px;background:var(--glass-bg);box-shadow:0 14px 30px rgba(10,20,40,.12),inset 0 1px 0 var(--glass-inset);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);transition:transform 260ms cubic-bezier(.2,.8,.2,1),box-shadow 260ms ease;animation:float-card 6s ease-in-out infinite,poster-reveal 720ms 180ms cubic-bezier(.2,.8,.2,1) both; }}
+.hero-signal-card span {{ display:block;color:var(--muted);font-size:.61rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase; }}
+.hero-signal-card strong {{ display:block;margin-top:4px;color:var(--ink);font-size:.88rem; }}
+.hero-poster-stack {{ position:relative;z-index:2;width:min(100%,420px);height:350px; }}
+.hero-poster {{ position:absolute;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;padding:17px;border:1px solid rgba(255,255,255,.42);border-radius:22px;color:white;box-shadow:0 28px 58px rgba(8,18,36,.25),inset 0 1px 0 rgba(255,255,255,.48);transition:transform 260ms cubic-bezier(.2,.8,.2,1),box-shadow 260ms ease; }}
+.hero-poster:before {{ content:"";position:absolute;inset:0;background:linear-gradient(155deg,rgba(255,255,255,.28),transparent 38%,rgba(4,11,25,.52)); }}
+.hero-poster:after {{ content:"";position:absolute;width:190px;height:190px;right:-72px;top:-72px;border:1px solid rgba(255,255,255,.38);border-radius:50%;box-shadow:0 0 0 17px rgba(255,255,255,.08),0 0 0 39px rgba(255,255,255,.045); }}
+.hero-poster-main {{ width:204px;height:296px;left:25%;top:7%;z-index:3;background:linear-gradient(150deg,var(--poster-accent),#101c36 84%);transform:rotate(-5deg);animation:float-card 7s ease-in-out infinite,poster-reveal 820ms 120ms cubic-bezier(.2,.8,.2,1) both; }}
+.hero-poster-side {{ width:174px;height:246px;right:0;top:24%;z-index:2;background:linear-gradient(150deg,var(--poster-accent),#17223b 88%);transform:rotate(8deg);animation:float-card 8s ease-in-out -2s infinite,poster-reveal 820ms 250ms cubic-bezier(.2,.8,.2,1) both; }}
+.hero-poster-back {{ width:150px;height:218px;left:3%;top:29%;z-index:1;background:linear-gradient(150deg,var(--poster-accent),#252041 88%);transform:rotate(-14deg);animation:float-card 9s ease-in-out -4s infinite,poster-reveal 820ms 360ms cubic-bezier(.2,.8,.2,1) both; }}
+.hero-poster:hover {{ z-index:5;transform:translateY(-8px) rotate(0deg) scale(1.035);box-shadow:0 38px 72px rgba(8,18,36,.34),inset 0 1px 0 rgba(255,255,255,.55); }}
+.poster-topline,.poster-bottomline {{ position:relative;z-index:1;display:flex;justify-content:space-between;gap:8px;align-items:center; }}
+.poster-topline span {{ color:rgba(255,255,255,.86);font-size:.59rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase; }}
+.poster-monogram {{ position:absolute;inset:35% 0 auto;text-align:center;color:rgba(255,255,255,.38);font-size:3.7rem;font-weight:800;letter-spacing:-.12em;text-shadow:0 8px 30px rgba(0,0,0,.2); }}
+.poster-bottomline {{ align-items:flex-end; }}
+.poster-title {{ max-width:88%;font-size:.91rem;font-weight:760;line-height:1.08;letter-spacing:-.03em;text-shadow:0 2px 12px rgba(0,0,0,.35); }}
+.poster-genre {{ margin-top:5px;color:rgba(255,255,255,.77);font-size:.61rem; }}
+.hero-match-badge {{ position:absolute;z-index:4;left:0;bottom:5%;padding:13px 15px;border:1px solid var(--glass-border);border-radius:17px;background:var(--glass-bg);color:var(--ink);box-shadow:0 16px 34px rgba(10,20,40,.14),inset 0 1px 0 var(--glass-inset);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);transition:transform 260ms cubic-bezier(.2,.8,.2,1),box-shadow 260ms ease;animation:float-card 7.5s ease-in-out -3s infinite,poster-reveal 760ms 300ms cubic-bezier(.2,.8,.2,1) both; }}
+.hero-match-badge span {{ display:block;color:var(--muted);font-size:.61rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase; }}
+.hero-match-badge strong {{ display:block;margin-top:3px;font-size:.84rem; }}
+.st-key-hero_open_overview div.stButton > button {{ background:color-mix(in srgb,var(--surface) 76%,transparent) !important;color:var(--ink) !important;border:1px solid var(--line-soft) !important;box-shadow:inset 0 1px 0 var(--glass-inset) !important; }}
+.st-key-hero_open_overview div.stButton > button:hover {{ background:var(--surface-raised) !important;transform:translateY(-1px) !important; }}
+.login-intro {{ color:var(--muted);font-size:.88rem;line-height:1.55;margin:0 0 14px; }}
+.login-footnote {{ padding:11px 13px;border:1px solid var(--line-soft);border-radius:13px;background:color-mix(in srgb,var(--surface) 84%,transparent);color:var(--muted);font-size:.73rem;line-height:1.45; }}
+.st-key-streamglass_login_submit button {{ min-height:46px !important;border-radius:14px !important;background:linear-gradient(135deg,#1683f5,#0066d5) !important;color:#fff !important;font-weight:720 !important;box-shadow:0 9px 22px rgba(0,113,227,.22) !important; }}
+[data-testid="stDialog"] {{ background:rgba(5,9,19,.46) !important;backdrop-filter:blur(28px) saturate(145%) !important;-webkit-backdrop-filter:blur(28px) saturate(145%) !important; }}
+[data-testid="stDialog"] section[role="dialog"] {{ width:min(540px,calc(100vw - 32px)) !important;padding:27px 28px 24px !important;border:1px solid var(--glass-border) !important;border-radius:28px !important;background:var(--glass-bg) !important;color:var(--ink) !important;box-shadow:0 28px 90px rgba(4,10,24,.34),inset 0 1px 0 var(--glass-inset) !important;backdrop-filter:blur(34px) saturate(165%) !important;-webkit-backdrop-filter:blur(34px) saturate(165%) !important; }}
+[data-testid="stDialog"] section[role="dialog"] h2 {{ margin:0 0 8px !important;color:var(--ink) !important;font-size:1.55rem !important;letter-spacing:-.045em !important;font-weight:740 !important; }}
+[data-testid="stDialog"] section[role="dialog"] [data-testid="stForm"] {{ border:0 !important;background:transparent !important;padding:0 !important; }}
+[data-testid="stDialog"] section[role="dialog"] [data-testid="stTextInput"] input {{ min-height:44px !important;border:1px solid var(--line) !important;border-radius:13px !important;background:var(--input-bg) !important;color:var(--ink) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.07) !important; }}
+[data-testid="stDialog"] section[role="dialog"] [data-testid="stTextInputRootElement"] {{ border:1px solid var(--line) !important;border-radius:13px !important;background:var(--input-bg) !important; }}
+[data-testid="stDialog"] section[role="dialog"] [data-testid="stTextInput"] input::placeholder {{ color:var(--muted) !important;opacity:.85 !important; }}
+[data-testid="stDialog"] section[role="dialog"] button[aria-label="Show password"] {{ color:var(--ink-soft) !important;background:transparent !important;border:0 !important;box-shadow:none !important; }}
+[data-testid="stDialog"] section[role="dialog"] input[type="checkbox"] {{ accent-color:var(--blue) !important; }}
+[data-testid="stDialog"] section[role="dialog"] [data-testid="stTextInput"] label {{ color:var(--ink-soft) !important;font-size:.78rem !important;font-weight:650 !important; }}
+[data-testid="stDialog"] section[role="dialog"] [data-testid="stCheckbox"] label {{ color:var(--ink-soft) !important;font-size:.75rem !important; }}
+[data-testid="stDialog"] section[role="dialog"] [data-testid="stAlert"] {{ border:1px solid rgba(255,159,10,.34) !important;border-radius:13px !important;background:rgba(255,159,10,.14) !important;color:var(--ink) !important; }}
+[data-testid="stDialog"] section[role="dialog"] [data-testid="stAlert"] [data-testid="stMarkdownContainer"],
+[data-testid="stDialog"] section[role="dialog"] [data-testid="stAlert"] p {{ color:var(--ink) !important; }}
+[data-testid="stDialog"] section[role="dialog"] button[aria-label="Close"] {{ color:var(--muted) !important; }}
+@keyframes float-card {{ 0%,100% {{ translate:0 0; }} 50% {{ translate:0 -11px; }} }}
+@keyframes landing-reveal {{ from {{ opacity:0;filter:blur(9px);translate:0 13px; }} to {{ opacity:1;filter:blur(0);translate:0 0; }} }}
+@keyframes landing-line {{ from {{ opacity:0;filter:blur(7px);translate:0 18px; }} to {{ opacity:1;filter:blur(0);translate:0 0; }} }}
+@keyframes poster-reveal {{ from {{ opacity:0;filter:blur(12px);scale:.88; }} to {{ opacity:1;filter:blur(0);scale:1; }} }}
+@keyframes orbit-drift {{ to {{ rotate:346deg; }} }}
+@keyframes signal-pulse {{ 0% {{ box-shadow:0 0 0 0 rgba(48,209,88,.32); }} 75%,100% {{ box-shadow:0 0 0 7px rgba(48,209,88,0); }} }}
+@media (hover:hover) and (pointer:fine) {{
+    .landing-kicker:hover {{ translate:0 -3px;border-color:color-mix(in srgb,var(--blue) 45%,var(--line-soft));box-shadow:0 9px 20px rgba(0,113,227,.11); }}
+    .landing-copy h1:hover {{ translate:0 -4px;filter:drop-shadow(0 13px 22px rgba(0,113,227,.16)); }}
+    .landing-copy p:hover {{ translate:0 -2px;color:var(--ink-soft); }}
+    .landing-proofline span:hover {{ translate:0 -4px;background:var(--blue-wash);border-color:color-mix(in srgb,var(--blue) 42%,var(--line-soft));box-shadow:0 8px 16px rgba(0,113,227,.10); }}
+    .landing-stat:hover {{ translate:0 -4px;background:color-mix(in srgb,var(--surface) 86%,transparent);box-shadow:0 10px 19px rgba(10,20,40,.08); }}
+    .landing-visual:hover .signal-map {{ opacity:1;filter:drop-shadow(0 0 12px rgba(41,151,255,.26)); }}
+    .landing-visual:hover .signal-orbit {{ scale:1.035;filter:brightness(1.14); }}
+    .hero-signal-card:hover,.hero-match-badge:hover {{ transform:translateY(-6px) scale(1.025);box-shadow:0 22px 40px rgba(10,20,40,.20),inset 0 1px 0 var(--glass-inset); }}
+}}
 
 /* Content surfaces are quiet paper-like panels, not glass. */
 .surface,.data-surface,.title-card,.metric-card,.proof-card,.profile-card {{ background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--radius); }}
@@ -262,16 +361,46 @@ code {{ color:var(--ink) !important; }}
 ::-webkit-scrollbar {{ width:10px;height:10px; }}
 ::-webkit-scrollbar-thumb {{ background:var(--line);border:3px solid var(--canvas);border-radius:999px; }}
 
-@media (max-width:760px) {{
-    .block-container {{ padding:7.5rem 16px 2.4rem !important; }}
-    .st-key-liquid_top_nav {{ top:10px !important;width:calc(100vw - 20px) !important;padding:5px !important; }}
-    .st-key-liquid_top_nav [data-testid="stHorizontalBlock"] {{ flex-wrap:wrap !important;gap:4px !important; }}
-    .st-key-liquid_top_nav [data-testid="stColumn"] {{ width:100% !important;flex:1 1 100% !important; }}
-    .st-key-liquid_top_nav [data-testid="stColumn"]:last-child {{ border-left:0 !important;border-top:1px solid var(--line-soft) !important;padding-left:0 !important;padding-top:4px !important; }}
+@media (max-width:960px) {{
+    .block-container {{ padding:8.9rem 16px 2.4rem !important; }}
+    .st-key-landing_hero {{ padding:clamp(20px,3vw,32px); }}
+    .st-key-liquid_top_nav {{ top:8px !important;width:calc(100vw - 16px) !important;padding:6px !important; }}
+    .st-key-liquid_top_nav [data-testid="stHorizontalBlock"] {{ display:grid !important;grid-template-columns:minmax(0,1fr) auto !important;grid-template-areas:"brand login" "navigation navigation" "theme theme" !important;gap:5px 9px !important; }}
+    .st-key-liquid_top_nav [data-testid="stColumn"] {{ width:auto !important;min-width:0 !important;flex:initial !important; }}
+    .st-key-liquid_top_nav [data-testid="stColumn"]:nth-child(1) {{ grid-area:brand; }}
+    .st-key-liquid_top_nav [data-testid="stColumn"]:nth-child(2) {{ grid-area:navigation; }}
+    .st-key-liquid_top_nav [data-testid="stColumn"]:nth-child(3) {{ grid-area:theme;border-left:0 !important;border-top:1px solid var(--line-soft) !important;padding:5px 0 0 !important; }}
+    .st-key-liquid_top_nav [data-testid="stColumn"]:nth-child(4) {{ grid-area:login;justify-self:end; }}
+    .st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stHorizontalBlock"] {{ display:flex !important;flex-wrap:nowrap !important; }}
+    .st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:nth-child(1) {{ width:auto !important;flex:1 1 auto !important; }}
+    .st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:nth-child(4) {{ width:auto !important;flex:0 0 auto !important; }}
+    .st-key-liquid_top_nav .nav-brand {{ font-size:.83rem; }}
     .st-key-liquid_top_nav [data-testid="stRadioGroup"] {{ overflow-x:auto !important;justify-content:flex-start !important; }}
     .st-key-liquid_top_nav [data-testid="stRadioGroup"] > div,
-    .st-key-liquid_top_nav .react-aria-RadioField {{ flex:0 0 auto !important;min-width:78px !important; }}
-    .st-key-liquid_top_nav [data-testid="stRadioOption"] {{ flex:0 0 auto !important;min-width:78px !important;min-height:34px !important;font-size:.72rem !important; }}
+    .st-key-liquid_top_nav .react-aria-RadioField {{ flex:0 0 auto !important;min-width:0 !important; }}
+    .st-key-liquid_top_nav [data-testid="stRadioOption"] {{ flex:0 0 auto !important;min-width:0 !important;min-height:34px !important;font-size:.72rem !important;padding:0 10px !important; }}
+    .st-key-liquid_top_nav [aria-label="Theme selection"] {{ justify-content:center !important; }}
+    .landing-copy {{ padding:0 0 18px; }}
+    .landing-copy h1 {{ max-width:460px;font-size:clamp(2.45rem,5.4vw,2.9rem);margin:15px 0 10px; }}
+    .landing-copy p {{ font-size:.91rem;line-height:1.5; }}
+    .landing-proofline {{ gap:6px;margin-top:12px; }}
+    .landing-proofline span {{ padding:6px 8px;font-size:.66rem; }}
+    .landing-stats {{ gap:17px;margin-top:15px; }}
+    .landing-visual {{ min-height:300px; }}
+    .hero-poster-stack {{ height:300px;transform:scale(.84); }}
+    .hero-poster:hover {{ transform:translateY(-4px) rotate(0deg) scale(1.025); }}
+}}
+@media (max-width:760px) {{
+    .st-key-landing_hero {{ min-height:auto;margin:-10px 0 0;padding:18px 20px;border-radius:25px; }}
+    .landing-copy {{ padding:8px 0 0; }}
+    .landing-copy h1 {{ font-size:clamp(2.45rem,9vw,3.1rem);margin:15px 0 10px; }}
+    .landing-copy p {{ font-size:.93rem; }}
+    .landing-proofline {{ margin-top:12px; }}
+    .landing-stats {{ margin-top:15px; }}
+    .landing-visual {{ min-height:300px;margin-top:8px; }}
+    .hero-poster-stack {{ height:300px;transform:scale(.84); }}
+    .hero-signal-card {{ top:0;right:0; }}
+    .hero-match-badge {{ bottom:0; }}
     .page-header {{ margin-bottom:26px; }}
     .page-header h1 {{ font-size:2.35rem; }}
     .page-header p {{ font-size:1rem; }}
@@ -280,6 +409,10 @@ code {{ color:var(--ink) !important; }}
     .profile-card .chip-row {{ margin-top:13px; }}
     .poster-swatch {{ width:76px; }}
     [data-testid="stTabs"] [role="tablist"] {{ overflow-x:auto; }}
+}}
+@media (prefers-reduced-motion:reduce) {{
+    .st-key-landing_hero:before,.signal-orbit,.hero-poster,.hero-signal-card,.hero-match-badge,.landing-live-dot,.landing-copy,.landing-visual {{ animation:none !important; }}
+    .hero-poster,.title-card,.nav-tab {{ transition:none !important; }}
 }}
 </style>
 """
@@ -297,18 +430,28 @@ NAV_LOOKUP = dict(NAV_ITEMS)
 NAV_LABELS = [label for label, _ in NAV_ITEMS]
 THEME_MODES = ["Light", "Dark", "System"]
 
-if st.session_state.get("current_module") not in NAV_LOOKUP.values():
-    st.session_state.current_module = "overview"
+if st.session_state.get("current_module") == "home":
+    st.session_state.current_module = "landing"
+if st.session_state.get("current_module") not in {*NAV_LOOKUP.values(), "landing"}:
+    st.session_state.current_module = "landing"
+if not st.session_state.get("streamglass_home_entry_initialized"):
+    st.session_state.current_module = "landing"
+    st.session_state.streamglass_home_entry_initialized = True
 if "selected_user_id" not in st.session_state:
     st.session_state.selected_user_id = "U101"
 if "k_neighbors" not in st.session_state:
     st.session_state.k_neighbors = 5
 if "alpha_weight" not in st.session_state:
     st.session_state.alpha_weight = .60
+if "login_dialog_open" not in st.session_state:
+    st.session_state.login_dialog_open = False
 engine.set_hyperparameters(st.session_state.k_neighbors, st.session_state.alpha_weight)
 
-current_label = next((label for label, key in NAV_ITEMS if key == st.session_state.current_module), "Overview")
-current_idx = NAV_LABELS.index(current_label) if current_label in NAV_LABELS else 0
+is_landing = st.session_state.current_module == "landing"
+if is_landing:
+    st.session_state.streamglass_main_nav = None
+current_label = next((label for label, key in NAV_ITEMS if key == st.session_state.current_module), None)
+current_idx = NAV_LABELS.index(current_label) if current_label in NAV_LABELS else None
 current_theme_idx = THEME_MODES.index(st.session_state.app_theme) if st.session_state.app_theme in THEME_MODES else 2
 
 def on_navigation_change():
@@ -321,28 +464,81 @@ def on_theme_change():
     if selected in THEME_MODES:
         st.session_state.app_theme = selected
 
+def open_studio():
+    st.session_state.current_module = "studio"
+    st.session_state.streamglass_main_nav = "Studio"
+
+def open_overview():
+    st.session_state.current_module = "overview"
+    st.session_state.streamglass_main_nav = "Overview"
+
+def open_landing():
+    st.session_state.current_module = "landing"
+    st.session_state.streamglass_main_nav = None
+
+def open_login_dialog():
+    st.session_state.login_dialog_open = True
+
+def close_login_dialog():
+    st.session_state.login_dialog_open = False
+
+@st.dialog("Sign in to StreamGlass", width="small", on_dismiss=close_login_dialog)
+def show_login_dialog():
+    st.markdown(
+        '<p class="login-intro">Your viewing signals stay yours. Sign in to continue to a more personal discovery experience.</p>',
+        unsafe_allow_html=True,
+    )
+    with st.form("streamglass_login_form"):
+        email = st.text_input("Email or subscriber ID", placeholder="you@example.com")
+        password = st.text_input("Password", type="password", placeholder="Enter your password")
+        keep_signed_in, help_text = st.columns([.56, .44])
+        with keep_signed_in:
+            st.checkbox("Keep me signed in")
+        with help_text:
+            st.markdown('<div style="text-align:right;padding-top:8px;color:var(--muted);font-size:.74rem">Demo access</div>', unsafe_allow_html=True)
+        submitted = st.form_submit_button("Sign in", key="streamglass_login_submit", use_container_width=True)
+    if submitted:
+        if not email.strip() or not password:
+            st.warning("Enter your email or subscriber ID and password to continue.")
+        else:
+            st.session_state.current_module = "studio"
+            st.session_state.streamglass_main_nav = "Studio"
+            st.session_state.login_dialog_open = False
+            st.rerun()
+    st.markdown(
+        '<div class="login-footnote">StreamGlass demo · Any non-empty demo details open the live workspace; they are not verified or saved.</div>',
+        unsafe_allow_html=True,
+    )
+
 with st.container(key="liquid_top_nav"):
-    nav_col, theme_col = st.columns([0.74, 0.26], gap="small")
-    with nav_col:
-        nav_selected = st.radio(
-            "Primary navigation",
-            options=NAV_LABELS,
-            index=current_idx,
-            key="streamglass_main_nav",
-            horizontal=True,
-            label_visibility="collapsed",
-            on_change=on_navigation_change,
+    brand_col, nav_col, theme_col, login_col = st.columns([.17, .55, .17, .11], gap="small")
+    with brand_col:
+        if is_landing:
+            st.markdown('<span class="landing-header-marker" aria-hidden="true"></span>', unsafe_allow_html=True)
+        st.button("StreamGlass", key="liquid_brand", on_click=open_landing)
+    if not is_landing:
+        with nav_col:
+            nav_selected = st.radio(
+                "Primary navigation",
+                options=NAV_LABELS,
+                index=current_idx,
+                key="streamglass_main_nav",
+                horizontal=True,
+                label_visibility="collapsed",
+                on_change=on_navigation_change,
+            )
+        with theme_col:
+            theme_selected = st.radio(
+                "Theme selection",
+                options=THEME_MODES,
+                index=current_theme_idx,
+                key="streamglass_theme_nav",
+                horizontal=True,
+                label_visibility="collapsed",
+                on_change=on_theme_change,
         )
-    with theme_col:
-        theme_selected = st.radio(
-            "Theme selection",
-            options=THEME_MODES,
-            index=current_theme_idx,
-            key="streamglass_theme_nav",
-            horizontal=True,
-            label_visibility="collapsed",
-            on_change=on_theme_change,
-        )
+    with login_col:
+        st.button("Sign in", key="liquid_login", on_click=open_login_dialog, use_container_width=True)
 
 def esc(value): return html.escape(str(value))
 def brandline(section): st.markdown(f'<div class="brandline"><span class="brand-mark">SG</span><span>StreamGlass</span><span class="brand-divider"></span><span>{esc(section)}</span></div>',unsafe_allow_html=True)
@@ -376,7 +572,62 @@ def profile_surface(subscriber,history_size):
     tags="".join(f'<span class="chip">{esc(genre)}</span>' for genre in subscriber.preferred_genres)
     st.markdown(f'''<section class="profile-card"><div><div class="profile-title">{esc(subscriber.name)} <span style="color:#86868b;font-weight:500;font-size:.83rem">· {esc(subscriber.user_id)} · {subscriber.age}</span></div><div class="profile-copy">{esc(subscriber.persona_desc)}</div></div><div class="chip-row"><span class="chip chip-blue">{esc(subscriber.primary_language)}</span><span class="chip">{esc(subscriber.secondary_language or "No secondary language")}</span>{tags}<span class="chip">{history_size} watched</span></div></section>''',unsafe_allow_html=True)
 
-if st.session_state.current_module == "overview":
+if st.session_state.current_module == "landing":
+    hero_metrics = database.get_db_metrics()
+    hero_titles = engine.get_static_popular_feed(limit=3)
+    poster_classes = ["hero-poster-main", "hero-poster-side", "hero-poster-back"]
+    poster_markup = []
+    for index, item in enumerate(hero_titles[:3]):
+        accent = str(item.get("accent_color", "#5f789c"))
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", accent):
+            accent = "#5f789c"
+        title = esc(item.get("title", "StreamGlass original"))
+        language = esc(item.get("language", "Regional"))
+        genre = esc(item.get("primary_genre", "Discovery"))
+        monogram = esc("".join(token[0] for token in re.findall(r"[A-Za-z0-9]+", str(item.get("title", "SG")))[:2]).upper())
+        poster_markup.append(
+            f'<article class="hero-poster {poster_classes[index]}" style="--poster-accent:{accent}">'
+            f'<div class="poster-topline"><span>{language}</span><span>SG · {index + 1:02d}</span></div>'
+            f'<div class="poster-monogram">{monogram}</div>'
+            f'<div class="poster-bottomline"><div><div class="poster-title">{title}</div>'
+            f'<div class="poster-genre">{genre} · from the live catalog</div></div></div></article>'
+        )
+    posters = "".join(poster_markup)
+
+    with st.container(key="landing_hero"):
+        copy_col, visual_col = st.columns([1.04, .96], gap="large")
+        with copy_col:
+            st.markdown(
+                f'''<div class="landing-copy">
+                    <div class="landing-kicker"><span class="landing-live-dot"></span>Personalized OTT intelligence</div>
+                    <h1>Find the next story <span>that feels like yours.</span></h1>
+                    <p>Regional discovery, made personal. StreamGlass brings subscriber taste, catalog diversity, and co-watch signals together in one transparent recommendation experience.</p>
+                    <div class="landing-proofline"><span>Language-aware</span><span>Graph-powered</span><span>Explainable ranking</span></div>
+                    <div class="landing-stats">
+                      <div class="landing-stat"><strong>{int(hero_metrics['user_count']):,}</strong><span>subscriber profiles</span></div>
+                      <div class="landing-stat"><strong>{int(hero_metrics['movie_count']):,}</strong><span>catalog titles</span></div>
+                      <div class="landing-stat"><strong>{int(hero_metrics['interaction_count']):,}</strong><span>watch signals</span></div>
+                    </div>
+                </div>''',
+                unsafe_allow_html=True,
+            )
+        with visual_col:
+            st.markdown(
+                f'''<div class="landing-visual" aria-label="A live recommendation map with real StreamGlass catalog titles">
+                    <svg class="signal-map" viewBox="0 0 520 420" aria-hidden="true">
+                      <path d="M60 300 C130 240 165 125 250 164 S375 312 465 115" fill="none" stroke="rgba(66,154,255,.34)" stroke-width="1.5" stroke-dasharray="4 8"/>
+                      <path d="M55 125 C145 190 220 290 305 242 S395 130 475 300" fill="none" stroke="rgba(65,207,174,.30)" stroke-width="1.5" stroke-dasharray="3 9"/>
+                      <circle cx="60" cy="300" r="5"/><circle cx="250" cy="164" r="5"/><circle cx="465" cy="115" r="5"/><circle cx="55" cy="125" r="4"/><circle cx="305" cy="242" r="4"/><circle cx="475" cy="300" r="4"/>
+                    </svg>
+                    <div class="signal-orbit"></div>
+                    <div class="hero-signal-card"><span>Live recommendation signals</span><strong>Taste · language · co-watch</strong></div>
+                    <div class="hero-poster-stack">{posters}</div>
+                    <div class="hero-match-badge"><span>Discovery, with context</span><strong>Made for every viewer</strong></div>
+                </div>''',
+                unsafe_allow_html=True,
+            )
+
+elif st.session_state.current_module == "overview":
     brandline("OTT intelligence platform")
     page_header("Personalized discovery, made legible","A calmer way to understand an OTT recommendation engine.","StreamGlass brings the subscriber, catalog, and recommendation model into one focused academic product—without hiding the mathematics behind the interface.")
     left,right=st.columns([1.18,.82],gap="large")
@@ -513,5 +764,8 @@ elif st.session_state.current_module == "analytics":
             heat.update_xaxes(title="Movie",tickangle=-45,side="bottom")
             heat.update_yaxes(title="Subscriber",autorange="reversed")
             st.plotly_chart(apply_chart_theme(heat,535),use_container_width=True,config={"displayModeBar":False})
+
+if st.session_state.login_dialog_open:
+    show_login_dialog()
 
 st.markdown('<div style="height:18px"></div><div style="border-top:1px solid rgba(60,60,67,.12);padding:18px 0 0;color:#86868b;font-size:.76rem;text-align:center">StreamGlass · OTT subscriber and personalized recommendation system · JNTUK R23 · TEAM-18</div>',unsafe_allow_html=True)
