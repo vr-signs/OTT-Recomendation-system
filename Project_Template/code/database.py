@@ -337,6 +337,156 @@ def get_er_schema_metadata() -> dict:
     }
 
 
+def add_movie(
+    title: str,
+    release_year: int,
+    language: str,
+    primary_genre: str,
+    director: str = "",
+    secondary_genre: str = None,
+    duration_min: int = 120,
+    accent_color: str = None,
+    db_path: str = None
+) -> str:
+    """
+    Adds a new movie to the catalog with ACID transaction safety.
+    Returns the newly assigned movie_id.
+    """
+    if not title or not str(title).strip():
+        raise ValueError("Movie title cannot be empty.")
+    title = str(title).strip()
+    language = str(language).strip() if language else "Regional"
+    primary_genre = str(primary_genre).strip() if primary_genre else "Drama"
+    director = str(director).strip() if director else "Independent"
+    try:
+        release_year = int(release_year)
+    except (ValueError, TypeError):
+        release_year = datetime.now().year
+    try:
+        duration_min = int(duration_min)
+    except (ValueError, TypeError):
+        duration_min = 120
+
+    conn = get_connection(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT movie_id FROM movies WHERE movie_id LIKE 'M%';")
+    rows = cursor.fetchall()
+    max_num = 0
+    for (mid,) in rows:
+        try:
+            num = int(mid[1:])
+            if num > max_num:
+                max_num = num
+        except ValueError:
+            pass
+    movie_id = f"M{max_num + 1:02d}"
+
+    if not accent_color:
+        genre_colors = {
+            "Action": "#e05638",
+            "Drama": "#0071e3",
+            "Thriller": "#8e44ad",
+            "Comedy": "#f39c12",
+            "Romance": "#e84393",
+            "Sci-Fi": "#0984e3",
+            "Crime": "#2d3436",
+            "Horror": "#2c3e50"
+        }
+        accent_color = genre_colors.get(primary_genre, "#5f789c")
+
+    cursor.execute("""
+    INSERT INTO movies
+    (movie_id, title, release_year, language, primary_genre, secondary_genre,
+     director, cast_members, synopsis, avg_rating, popularity_score, duration_min, accent_color)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    """, (
+        movie_id,
+        title,
+        release_year,
+        language,
+        primary_genre,
+        secondary_genre or None,
+        director,
+        json.dumps([director]),
+        f"Catalog title: {title} directed by {director}.",
+        0.0,
+        55.0,
+        duration_min,
+        accent_color
+    ))
+    conn.commit()
+    conn.close()
+    return movie_id
+
+
+def get_or_create_demo_subscriber(identifier: str, db_path: str = None) -> str:
+    """
+    Finds or creates a subscriber profile matching the login identifier.
+    Supports email, user_id (e.g. U101), or username.
+    """
+    if not identifier:
+        return "U101"
+    ident = str(identifier).strip()
+    conn = get_connection(db_path)
+    cursor = conn.cursor()
+
+    # 1. Exact match on user_id
+    cursor.execute("SELECT user_id FROM users WHERE LOWER(user_id) = LOWER(?);", (ident,))
+    row = cursor.fetchone()
+    if row:
+        user_id = row[0]
+        conn.close()
+        return user_id
+
+    # 2. Match on name
+    cursor.execute("SELECT user_id FROM users WHERE LOWER(name) = LOWER(?);", (ident,))
+    row = cursor.fetchone()
+    if row:
+        user_id = row[0]
+        conn.close()
+        return user_id
+
+    # 3. If email like "user@domain.com", check if name matches prefix
+    name_part = ident.split("@")[0].replace(".", " ").title()
+    cursor.execute("SELECT user_id FROM users WHERE LOWER(name) = LOWER(?);", (name_part,))
+    row = cursor.fetchone()
+    if row:
+        user_id = row[0]
+        conn.close()
+        return user_id
+
+    # 4. Generate a unique user_id for new subscriber
+    cursor.execute("SELECT user_id FROM users WHERE user_id LIKE 'U%';")
+    all_uids = cursor.fetchall()
+    max_num = 100
+    for (uid,) in all_uids:
+        try:
+            num = int(uid[1:])
+            if num > max_num:
+                max_num = num
+        except ValueError:
+            pass
+    new_user_id = f"U{max_num + 1}"
+    display_name = name_part if name_part else ident
+
+    cursor.execute("""
+    INSERT INTO users (user_id, name, age, primary_language, secondary_language, preferred_genres, persona_desc)
+    VALUES (?, ?, ?, ?, ?, ?, ?);
+    """, (
+        new_user_id,
+        display_name,
+        25,
+        "Telugu",
+        "English",
+        json.dumps(["Drama", "Action"]),
+        f"Signed-in subscriber account for {display_name}."
+    ))
+    conn.commit()
+    conn.close()
+    return new_user_id
+
+
 # Auto-seed upon direct execution or import if database not present
 if __name__ == "__main__":
     print("[DBMS Engine] Initializing and Seeding Database...")

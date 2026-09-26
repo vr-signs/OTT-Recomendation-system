@@ -4,6 +4,7 @@ import os
 import sys
 import html
 import re
+import base64
 import sqlite3
 import pandas as pd
 import plotly.express as px
@@ -17,6 +18,10 @@ import graph_engine
 import recommender
 
 st.set_page_config(page_title="StreamGlass", page_icon="▷", layout="wide", initial_sidebar_state="collapsed")
+
+BRAND_LOGO_PATH = os.path.join(os.path.dirname(__file__), "assets", "streamglass-logo.png")
+with open(BRAND_LOGO_PATH, "rb") as brand_logo_file:
+    BRAND_LOGO_DATA_URI = "data:image/png;base64," + base64.b64encode(brand_logo_file.read()).decode("ascii")
 
 THEME_DEFAULT_VERSION = 1
 if st.session_state.get("theme_default_version") != THEME_DEFAULT_VERSION:
@@ -127,16 +132,20 @@ html, body, [class*="css"] {{ font-family:-apple-system,BlinkMacSystemFont,"SF P
 .st-key-liquid_top_nav [data-testid="stColumn"] {{ display:flex !important; align-items:center !important; min-width:0 !important; }}
 .st-key-liquid_top_nav [data-testid="stColumn"]:nth-child(3) {{ border-left:1px solid var(--line-soft) !important; padding-left:8px !important; }}
 .nav-brand {{ display:flex;align-items:center;gap:10px;white-space:nowrap;color:var(--ink);font-size:.92rem;font-weight:740;letter-spacing:-.025em; }}
-.nav-brand .brand-mark {{ width:30px;height:30px;border-radius:10px;display:inline-grid;place-items:center;background:linear-gradient(145deg,#2997ff,#1762c4);color:#fff;font-size:.65rem;font-weight:800;letter-spacing:-.04em;box-shadow:0 5px 14px rgba(0,113,227,.24),inset 0 1px 0 rgba(255,255,255,.45); }}
+.nav-brand .brand-mark {{ width:30px;height:30px;border-radius:10px;display:inline-grid;place-items:center;background:url("{BRAND_LOGO_DATA_URI}") center/cover no-repeat;color:transparent;font-size:0;box-shadow:0 5px 14px rgba(0,113,227,.24),inset 0 1px 0 rgba(255,255,255,.45); }}
 .st-key-liquid_top_nav .st-key-liquid_brand button {{ min-height:32px !important;padding:0 1px !important;border:0 !important;border-radius:10px !important;background:transparent !important;color:var(--ink) !important;font-size:.92rem !important;font-weight:740 !important;letter-spacing:-.025em !important;box-shadow:none !important;display:flex !important;align-items:center !important;gap:10px !important;white-space:nowrap !important; }}
-.st-key-liquid_top_nav .st-key-liquid_brand button:before {{ content:"SG";width:30px;height:30px;border-radius:10px;display:inline-grid;place-items:center;background:linear-gradient(145deg,#2997ff,#1762c4);color:#fff;font-size:.65rem;font-weight:800;letter-spacing:-.04em;box-shadow:0 5px 14px rgba(0,113,227,.24),inset 0 1px 0 rgba(255,255,255,.45); }}
+.st-key-liquid_top_nav .st-key-liquid_brand button:before {{ content:"";width:30px;height:30px;border-radius:10px;display:inline-grid;place-items:center;background:url("{BRAND_LOGO_DATA_URI}") center/cover no-repeat;box-shadow:0 5px 14px rgba(0,113,227,.24),inset 0 1px 0 rgba(255,255,255,.45); }}
 .st-key-liquid_top_nav .st-key-liquid_brand button:hover {{ background:transparent !important;transform:translateY(-1px) !important;filter:brightness(1.06) !important; }}
 .landing-header-marker {{ display:none !important; }}
-.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stHorizontalBlock"] {{ display:flex !important;align-items:center !important;gap:12px !important; }}
-.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:nth-child(1) {{ flex:1 1 auto !important;width:auto !important; }}
-.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:nth-child(2),
-.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:nth-child(3) {{ display:none !important; }}
-.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:nth-child(4) {{ flex:0 0 auto !important;width:auto !important;border-left:0 !important;padding-left:0 !important; }}
+/* Landing page is a full-screen composition rather than a nested set of glass cards. */
+body:has(.landing-header-marker) .block-container {{ max-width:none !important;padding:0 !important; }}
+.st-key-liquid_top_nav:has(.landing-header-marker) {{ top:0 !important;left:0 !important;transform:none !important;width:100% !important;padding:20px clamp(22px,5vw,68px) !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important; }}
+.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stHorizontalBlock"] {{ display:flex !important;align-items:center !important;justify-content:space-between !important;gap:16px !important; }}
+.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"] {{ width:auto !important;min-width:0 !important; }}
+.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:first-child {{ flex:1 1 auto !important;justify-content:flex-start !important; }}
+.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:last-child {{ flex:0 0 auto !important;justify-content:flex-end !important;border-left:0 !important;padding-left:0 !important; }}
+.st-key-liquid_top_nav:has(.landing-header-marker) .st-key-liquid_brand button {{ position:fixed !important;z-index:1000000 !important;top:20px !important;left:clamp(22px,5vw,68px) !important;width:auto !important; }}
+.st-key-liquid_top_nav:has(.landing-header-marker) .st-key-liquid_login button {{ position:fixed !important;z-index:1000000 !important;top:20px !important;right:clamp(22px,5vw,68px) !important;width:auto !important; }}
 .st-key-liquid_top_nav > [data-testid="stElementContainer"],
 .st-key-liquid_top_nav [data-testid="stRadio"] {{ width:100% !important; margin:0 !important; padding:0 !important; }}
  .st-key-liquid_top_nav [data-testid="stRadioGroup"],
@@ -189,7 +198,7 @@ html, body, [class*="css"] {{ font-family:-apple-system,BlinkMacSystemFont,"SF P
 }}
 
 .brandline {{ display:flex;align-items:center;gap:9px;margin:0 0 26px;color:var(--muted);font-size:.82rem;font-weight:650;letter-spacing:.01em; }}
-.brand-mark {{ width:22px;height:22px;border-radius:7px;display:inline-grid;place-items:center;background:var(--brand-bg);color:var(--brand-color);font-size:.62rem;font-weight:800;letter-spacing:-.05em; }}
+.brand-mark {{ width:22px;height:22px;border-radius:7px;display:inline-grid;place-items:center;background:url("{BRAND_LOGO_DATA_URI}") center/cover no-repeat;color:transparent;font-size:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.22); }}
 .brand-divider {{ width:1px;height:14px;background:var(--line); }}
 .page-header {{ max-width:830px;margin-bottom:34px; }}
 .eyebrow {{ color:var(--blue);font-size:.73rem;font-weight:750;letter-spacing:.08em;text-transform:uppercase;margin-bottom:9px; }}
@@ -201,9 +210,12 @@ html, body, [class*="css"] {{ font-family:-apple-system,BlinkMacSystemFont,"SF P
 
 /* One-screen welcome surface: a live-feeling catalog and recommendation signal map. */
 .st-key-landing_hero {{ position:relative;isolation:isolate;overflow:hidden;min-height:clamp(520px,calc(100svh - 190px),700px);margin:-20px 0 0;padding:clamp(26px,4vw,54px);border:1px solid var(--line-soft);border-radius:32px;background:radial-gradient(ellipse at 78% 52%,rgba(0,113,227,.13),transparent 35%),radial-gradient(ellipse at 15% 2%,rgba(111,139,255,.10),transparent 31%),linear-gradient(135deg,color-mix(in srgb,var(--surface) 76%,transparent),color-mix(in srgb,var(--canvas) 76%,transparent));box-shadow:0 24px 70px rgba(20,30,55,.07),inset 0 1px 0 rgba(255,255,255,.58);backdrop-filter:blur(16px) saturate(145%);-webkit-backdrop-filter:blur(16px) saturate(145%); }}
+body:has(.landing-header-marker) .st-key-landing_hero {{ min-height:100svh;margin:0 !important;padding:clamp(104px,13vh,142px) clamp(26px,6vw,92px) 68px !important;border:0 !important;border-radius:0 !important;background:radial-gradient(ellipse at 76% 52%,rgba(0,113,227,.13),transparent 35%),radial-gradient(ellipse at 13% 3%,rgba(111,139,255,.10),transparent 31%),linear-gradient(135deg,color-mix(in srgb,var(--surface) 92%,transparent),var(--canvas)) !important;box-shadow:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important; }}
+/* Keep the liquid contour in the artwork, never through the fixed brand controls. */
+body:has(.landing-header-marker) .st-key-landing_hero:before {{ top:clamp(180px,25vh,240px) !important;right:-145px !important; }}
 .st-key-landing_hero:before {{ content:"";position:absolute;z-index:-1;width:390px;height:390px;right:-145px;top:-170px;border:1px solid rgba(0,113,227,.12);border-radius:50%;box-shadow:0 0 0 36px rgba(0,113,227,.025),0 0 0 82px rgba(0,113,227,.018);animation:orbit-drift 24s linear infinite; }}
 .st-key-landing_hero [data-testid="stHorizontalBlock"] {{ min-height:100%;align-items:center !important;gap:clamp(24px,4vw,64px) !important; }}
-.landing-copy {{ max-width:580px;padding:14px 0 34px;animation:landing-reveal 720ms cubic-bezier(.2,.8,.2,1) both; }}
+.landing-copy {{ max-width:580px;padding:14px 0 18px;animation:landing-reveal 720ms cubic-bezier(.2,.8,.2,1) both; }}
 .landing-kicker {{ display:inline-flex;align-items:center;gap:9px;padding:7px 11px;border:1px solid var(--line-soft);border-radius:999px;background:color-mix(in srgb,var(--surface) 74%,transparent);color:var(--muted);font-size:.69rem;font-weight:730;letter-spacing:.11em;text-transform:uppercase;transition:translate 260ms cubic-bezier(.2,.8,.2,1),border-color 260ms ease,box-shadow 260ms ease;animation:landing-line 620ms 120ms cubic-bezier(.2,.8,.2,1) both; }}
 .landing-live-dot {{ width:7px;height:7px;border-radius:50%;background:#30d158;box-shadow:0 0 0 4px rgba(48,209,88,.14);animation:signal-pulse 2.4s ease-out infinite; }}
 .landing-copy h1 {{ max-width:600px;margin:21px 0 16px;color:var(--ink);font-size:clamp(2.8rem,5.5vw,5.25rem);line-height:.99;letter-spacing:-.067em;font-weight:760;transition:translate 300ms cubic-bezier(.2,.8,.2,1),filter 300ms ease;text-wrap:balance;animation:landing-line 720ms 190ms cubic-bezier(.2,.8,.2,1) both; }}
@@ -227,13 +239,24 @@ html, body, [class*="css"] {{ font-family:-apple-system,BlinkMacSystemFont,"SF P
 .hero-signal-card span {{ display:block;color:var(--muted);font-size:.61rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase; }}
 .hero-signal-card strong {{ display:block;margin-top:4px;color:var(--ink);font-size:.88rem; }}
 .hero-poster-stack {{ position:relative;z-index:2;width:min(100%,420px);height:350px; }}
-.hero-poster {{ position:absolute;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;padding:17px;border:1px solid rgba(255,255,255,.42);border-radius:22px;color:white;box-shadow:0 28px 58px rgba(8,18,36,.25),inset 0 1px 0 rgba(255,255,255,.48);transition:transform 260ms cubic-bezier(.2,.8,.2,1),box-shadow 260ms ease; }}
+.hero-poster-album {{ position:relative;width:min(100%,430px);height:136px;margin-top:17px;overflow:hidden;perspective:1000px;animation:landing-line 760ms 520ms cubic-bezier(.2,.8,.2,1) both; }}
+.hero-catalog-group {{ position:absolute;inset:0;will-change:transform,opacity; }}
+.hero-poster-album:hover .hero-catalog-group {{ animation-play-state:paused !important; }}
+.hero-poster {{ position:absolute;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;padding:17px;border:1px solid rgba(255,255,255,.42);border-radius:22px;color:white;box-shadow:0 28px 58px rgba(8,18,36,.25),inset 0 1px 0 rgba(255,255,255,.48);transition:translate 260ms cubic-bezier(.2,.8,.2,1),box-shadow 260ms ease; }}
 .hero-poster:before {{ content:"";position:absolute;inset:0;background:linear-gradient(155deg,rgba(255,255,255,.28),transparent 38%,rgba(4,11,25,.52)); }}
 .hero-poster:after {{ content:"";position:absolute;width:190px;height:190px;right:-72px;top:-72px;border:1px solid rgba(255,255,255,.38);border-radius:50%;box-shadow:0 0 0 17px rgba(255,255,255,.08),0 0 0 39px rgba(255,255,255,.045); }}
 .hero-poster-main {{ width:204px;height:296px;left:25%;top:7%;z-index:3;background:linear-gradient(150deg,var(--poster-accent),#101c36 84%);transform:rotate(-5deg);animation:float-card 7s ease-in-out infinite,poster-reveal 820ms 120ms cubic-bezier(.2,.8,.2,1) both; }}
 .hero-poster-side {{ width:174px;height:246px;right:0;top:24%;z-index:2;background:linear-gradient(150deg,var(--poster-accent),#17223b 88%);transform:rotate(8deg);animation:float-card 8s ease-in-out -2s infinite,poster-reveal 820ms 250ms cubic-bezier(.2,.8,.2,1) both; }}
 .hero-poster-back {{ width:150px;height:218px;left:3%;top:29%;z-index:1;background:linear-gradient(150deg,var(--poster-accent),#252041 88%);transform:rotate(-14deg);animation:float-card 9s ease-in-out -4s infinite,poster-reveal 820ms 360ms cubic-bezier(.2,.8,.2,1) both; }}
-.hero-poster:hover {{ z-index:5;transform:translateY(-8px) rotate(0deg) scale(1.035);box-shadow:0 38px 72px rgba(8,18,36,.34),inset 0 1px 0 rgba(255,255,255,.55); }}
+/* Every catalog group arrives together, hovers briefly, then slips below the viewport. */
+.hero-poster-album .hero-poster {{ padding:10px 11px;border-radius:15px;transform-origin:center bottom;cursor:pointer; }}
+.hero-poster-album .catalog-slot-0 {{ width:108px;height:126px;left:31%;top:0;z-index:3;transform:rotate(-5deg); }}
+.hero-poster-album .catalog-slot-1 {{ width:94px;height:112px;right:3%;top:15px;z-index:2;transform:rotate(8deg); }}
+.hero-poster-album .catalog-slot-2 {{ width:88px;height:104px;left:5%;top:23px;z-index:1;transform:rotate(-14deg); }}
+.hero-poster-album .poster-monogram {{ inset:35% 0 auto;font-size:2rem; }}
+.hero-poster-album .poster-title {{ font-size:.64rem; }}
+.hero-poster-album .poster-genre,.hero-poster-album .poster-topline span {{ font-size:.47rem; }}
+.hero-poster:hover {{ z-index:5;translate:0 -9px;box-shadow:0 32px 60px rgba(8,18,36,.30),inset 0 1px 0 rgba(255,255,255,.55); }}
 .poster-topline,.poster-bottomline {{ position:relative;z-index:1;display:flex;justify-content:space-between;gap:8px;align-items:center; }}
 .poster-topline span {{ color:rgba(255,255,255,.86);font-size:.59rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase; }}
 .poster-monogram {{ position:absolute;inset:35% 0 auto;text-align:center;color:rgba(255,255,255,.38);font-size:3.7rem;font-weight:800;letter-spacing:-.12em;text-shadow:0 8px 30px rgba(0,0,0,.2); }}
@@ -267,6 +290,7 @@ html, body, [class*="css"] {{ font-family:-apple-system,BlinkMacSystemFont,"SF P
 @keyframes landing-reveal {{ from {{ opacity:0;filter:blur(9px);translate:0 13px; }} to {{ opacity:1;filter:blur(0);translate:0 0; }} }}
 @keyframes landing-line {{ from {{ opacity:0;filter:blur(7px);translate:0 18px; }} to {{ opacity:1;filter:blur(0);translate:0 0; }} }}
 @keyframes poster-reveal {{ from {{ opacity:0;filter:blur(12px);scale:.88; }} to {{ opacity:1;filter:blur(0);scale:1; }} }}
+@keyframes catalog-run {{ 0% {{ opacity:0;transform:translateY(-112px) rotate(-3deg); }} 3% {{ opacity:1;transform:translateY(-20px) rotate(-1deg); }} 6% {{ opacity:1;transform:translateY(0) rotate(1deg); }} 10% {{ opacity:1;transform:translateY(3px) rotate(-1deg); }} 12.5% {{ opacity:0;transform:translateY(168px) rotate(4deg); }} 14.286%,100% {{ opacity:0;transform:translateY(168px) rotate(4deg); }} }}
 @keyframes orbit-drift {{ to {{ rotate:346deg; }} }}
 @keyframes signal-pulse {{ 0% {{ box-shadow:0 0 0 0 rgba(48,209,88,.32); }} 75%,100% {{ box-shadow:0 0 0 7px rgba(48,209,88,0); }} }}
 @media (hover:hover) and (pointer:fine) {{
@@ -309,9 +333,13 @@ html, body, [class*="css"] {{ font-family:-apple-system,BlinkMacSystemFont,"SF P
 .chip-row {{ display:flex;flex-wrap:wrap;gap:6px; }}
 .chip {{ background:var(--chip-bg);border:1px solid var(--chip-border);color:var(--chip-color);border-radius:999px;padding:5px 9px;font-size:.72rem;font-weight:620;white-space:nowrap; }}
 .chip-blue {{ background:var(--blue-wash);border-color:rgba(0,113,227,.16);color:var(--blue); }}
-.feed-head {{ display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:5px; }}
-.feed-head h2 {{ font-size:1.12rem;letter-spacing:-.03em;margin:0;color:var(--ink); }}
-.feed-head span {{ font-size:.75rem;font-weight:700;color:var(--muted); }}
+.feed-head {{ display:flex;align-items:center;justify-content:space-between;gap:12px;margin:5px 0 9px; }}
+.feed-head h2 {{ display:inline-flex;align-items:center;min-height:36px;padding:0 13px;border:1px solid var(--line-soft);border-radius:12px;font-size:1.12rem;letter-spacing:-.03em;margin:0;color:var(--ink);background:var(--surface);box-shadow:inset 0 1px 0 var(--glass-inset); }}
+.feed-head span {{ padding:5px 8px;border-radius:999px;font-size:.65rem;font-weight:760;letter-spacing:.055em;color:var(--muted);background:var(--hover-bg); }}
+.feed-head-popular h2 {{ border-color:rgba(255,149,0,.52) !important;background:linear-gradient(135deg,rgba(255,149,0,.22),rgba(255,149,0,.08)) !important;color:var(--ink) !important;font-size:1.24rem !important;font-weight:780 !important;letter-spacing:-.035em !important;box-shadow:0 4px 18px rgba(255,149,0,.20),inset 0 1px 0 rgba(255,255,255,.45) !important;border-radius:14px !important;padding:6px 16px !important; }}
+.feed-head-popular span {{ color:#ff9500 !important;background:rgba(255,149,0,.15) !important;border:1px solid rgba(255,149,0,.3) !important; }}
+.feed-head-personal h2 {{ border-color:rgba(0,113,227,.52) !important;background:linear-gradient(135deg,rgba(0,113,227,.22),rgba(0,113,227,.08)) !important;color:var(--blue) !important;font-size:1.24rem !important;font-weight:780 !important;letter-spacing:-.035em !important;box-shadow:0 4px 18px rgba(0,113,227,.24),inset 0 1px 0 rgba(255,255,255,.45) !important;border-radius:14px !important;padding:6px 16px !important; }}
+.feed-head-personal span {{ color:var(--blue) !important;background:rgba(0,113,227,.15) !important;border:1px solid rgba(0,113,227,.3) !important; }}
 .feed-copy {{ margin:0 0 15px;color:var(--muted);font-size:.83rem;line-height:1.45; }}
 .title-card {{ overflow:hidden;margin:0 0 11px;transition:transform 180ms ease,border-color 180ms ease,box-shadow 180ms ease; }}
 .title-card:hover {{ transform:translateY(-2px);border-color:var(--card-border-hover);box-shadow:var(--card-shadow-hover); }}
@@ -360,6 +388,11 @@ div.stButton > button:hover {{ background:var(--blue) !important;filter:brightne
 code {{ color:var(--ink) !important; }}
 ::-webkit-scrollbar {{ width:10px;height:10px; }}
 ::-webkit-scrollbar-thumb {{ background:var(--line);border:3px solid var(--canvas);border-radius:999px; }}
+.streamglass-footer {{ margin-top:18px;border-top:1px solid rgba(60,60,67,.12);padding:18px 0 0;color:#86868b;font-size:.76rem;text-align:center; }}
+body:has(.landing-header-marker) .streamglass-footer {{ position:fixed;z-index:4;left:0;right:0;bottom:18px;margin:0;padding:0 20px;border:0;color:var(--faint);font-size:.68rem;letter-spacing:.015em;pointer-events:none; }}
+@media (min-width:761px) {{
+    body:has(.landing-header-marker),body:has(.landing-header-marker) [data-testid="stAppViewContainer"] {{ overflow:hidden !important; }}
+}}
 
 @media (max-width:960px) {{
     .block-container {{ padding:8.9rem 16px 2.4rem !important; }}
@@ -371,9 +404,14 @@ code {{ color:var(--ink) !important; }}
     .st-key-liquid_top_nav [data-testid="stColumn"]:nth-child(2) {{ grid-area:navigation; }}
     .st-key-liquid_top_nav [data-testid="stColumn"]:nth-child(3) {{ grid-area:theme;border-left:0 !important;border-top:1px solid var(--line-soft) !important;padding:5px 0 0 !important; }}
     .st-key-liquid_top_nav [data-testid="stColumn"]:nth-child(4) {{ grid-area:login;justify-self:end; }}
-    .st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stHorizontalBlock"] {{ display:flex !important;flex-wrap:nowrap !important; }}
-    .st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:nth-child(1) {{ width:auto !important;flex:1 1 auto !important; }}
-    .st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:nth-child(4) {{ width:auto !important;flex:0 0 auto !important; }}
+    .st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stHorizontalBlock"] {{ display:flex !important;flex-wrap:nowrap !important;justify-content:space-between !important; }}
+    .st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:first-child {{ width:auto !important;flex:1 1 auto !important; }}
+    .st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:last-child {{ width:auto !important;flex:0 0 auto !important; }}
+    body:has(.landing-header-marker) .block-container {{ padding:0 !important; }}
+    .st-key-liquid_top_nav:has(.landing-header-marker) {{ top:0 !important;width:100% !important;padding:16px 20px !important; }}
+    .st-key-liquid_top_nav:has(.landing-header-marker) .st-key-liquid_brand button {{ top:16px !important;left:20px !important; }}
+    .st-key-liquid_top_nav:has(.landing-header-marker) .st-key-liquid_login button {{ top:16px !important;right:20px !important; }}
+    body:has(.landing-header-marker) .st-key-landing_hero {{ min-height:100svh;margin:0 !important;padding:96px 20px 58px !important;border:0 !important;border-radius:0 !important; }}
     .st-key-liquid_top_nav .nav-brand {{ font-size:.83rem; }}
     .st-key-liquid_top_nav [data-testid="stRadioGroup"] {{ overflow-x:auto !important;justify-content:flex-start !important; }}
     .st-key-liquid_top_nav [data-testid="stRadioGroup"] > div,
@@ -387,8 +425,10 @@ code {{ color:var(--ink) !important; }}
     .landing-proofline span {{ padding:6px 8px;font-size:.66rem; }}
     .landing-stats {{ gap:17px;margin-top:15px; }}
     .landing-visual {{ min-height:300px; }}
-    .hero-poster-stack {{ height:300px;transform:scale(.84); }}
-    .hero-poster:hover {{ transform:translateY(-4px) rotate(0deg) scale(1.025); }}
+    .hero-poster-stack:not(.hero-poster-album) {{ height:300px;transform:scale(.84); }}
+    .hero-poster-album {{ height:124px;margin-top:14px;transform:none; }}
+    .hero-poster-album .catalog-slot-0 {{ left:29%; }}
+    .hero-poster:hover {{ translate:0 -5px; }}
 }}
 @media (max-width:760px) {{
     .st-key-landing_hero {{ min-height:auto;margin:-10px 0 0;padding:18px 20px;border-radius:25px; }}
@@ -398,9 +438,12 @@ code {{ color:var(--ink) !important; }}
     .landing-proofline {{ margin-top:12px; }}
     .landing-stats {{ margin-top:15px; }}
     .landing-visual {{ min-height:300px;margin-top:8px; }}
-    .hero-poster-stack {{ height:300px;transform:scale(.84); }}
+    .hero-poster-stack:not(.hero-poster-album) {{ height:300px;transform:scale(.84); }}
+    .hero-poster-album {{ height:124px;margin-top:14px;transform:none; }}
+    .hero-poster-album .catalog-slot-0 {{ left:31%; }}
     .hero-signal-card {{ top:0;right:0; }}
     .hero-match-badge {{ bottom:0; }}
+    body:has(.landing-header-marker) .st-key-landing_hero {{ min-height:100svh;margin:0 !important;padding:90px 20px 58px !important;border:0 !important;border-radius:0 !important; }}
     .page-header {{ margin-bottom:26px; }}
     .page-header h1 {{ font-size:2.35rem; }}
     .page-header p {{ font-size:1rem; }}
@@ -445,6 +488,10 @@ if "alpha_weight" not in st.session_state:
     st.session_state.alpha_weight = .60
 if "login_dialog_open" not in st.session_state:
     st.session_state.login_dialog_open = False
+if "logged_in_user_id" not in st.session_state:
+    st.session_state.logged_in_user_id = None
+if "signed_in_identifier" not in st.session_state:
+    st.session_state.signed_in_identifier = None
 engine.set_hyperparameters(st.session_state.k_neighbors, st.session_state.alpha_weight)
 
 is_landing = st.session_state.current_module == "landing"
@@ -501,6 +548,9 @@ def show_login_dialog():
         if not email.strip() or not password:
             st.warning("Enter your email or subscriber ID and password to continue.")
         else:
+            st.session_state.logged_in_user_id = database.get_or_create_demo_subscriber(email)
+            st.session_state.signed_in_identifier = email.strip()
+            st.session_state.selected_user_id = st.session_state.logged_in_user_id
             st.session_state.current_module = "studio"
             st.session_state.streamglass_main_nav = "Studio"
             st.session_state.login_dialog_open = False
@@ -510,13 +560,19 @@ def show_login_dialog():
         unsafe_allow_html=True,
     )
 
-with st.container(key="liquid_top_nav"):
-    brand_col, nav_col, theme_col, login_col = st.columns([.17, .55, .17, .11], gap="small")
-    with brand_col:
-        if is_landing:
+if is_landing:
+    with st.container(key="liquid_top_nav"):
+        landing_brand_col, landing_login_col = st.columns([.86, .14], gap="small")
+        with landing_brand_col:
             st.markdown('<span class="landing-header-marker" aria-hidden="true"></span>', unsafe_allow_html=True)
-        st.button("StreamGlass", key="liquid_brand", on_click=open_landing)
-    if not is_landing:
+            st.button("StreamGlass", key="liquid_brand", on_click=open_landing)
+        with landing_login_col:
+            st.button("Sign in", key="liquid_login", on_click=open_login_dialog)
+else:
+    with st.container(key="liquid_top_nav"):
+        brand_col, nav_col, theme_col, login_col = st.columns([.17, .55, .17, .11], gap="small")
+        with brand_col:
+            st.button("StreamGlass", key="liquid_brand", on_click=open_landing)
         with nav_col:
             nav_selected = st.radio(
                 "Primary navigation",
@@ -536,9 +592,9 @@ with st.container(key="liquid_top_nav"):
                 horizontal=True,
                 label_visibility="collapsed",
                 on_change=on_theme_change,
-        )
-    with login_col:
-        st.button("Sign in", key="liquid_login", on_click=open_login_dialog, use_container_width=True)
+            )
+        with login_col:
+            st.button("Sign in", key="liquid_login", on_click=open_login_dialog, use_container_width=True)
 
 def esc(value): return html.escape(str(value))
 def brandline(section): st.markdown(f'<div class="brandline"><span class="brand-mark">SG</span><span>StreamGlass</span><span class="brand-divider"></span><span>{esc(section)}</span></div>',unsafe_allow_html=True)
@@ -574,25 +630,70 @@ def profile_surface(subscriber,history_size):
 
 if st.session_state.current_module == "landing":
     hero_metrics = database.get_db_metrics()
-    hero_titles = engine.get_static_popular_feed(limit=3)
-    poster_classes = ["hero-poster-main", "hero-poster-side", "hero-poster-back"]
-    poster_markup = []
-    for index, item in enumerate(hero_titles[:3]):
-        accent = str(item.get("accent_color", "#5f789c"))
-        if not re.fullmatch(r"#[0-9a-fA-F]{6}", accent):
-            accent = "#5f789c"
-        title = esc(item.get("title", "StreamGlass original"))
-        language = esc(item.get("language", "Regional"))
-        genre = esc(item.get("primary_genre", "Discovery"))
-        monogram = esc("".join(token[0] for token in re.findall(r"[A-Za-z0-9]+", str(item.get("title", "SG")))[:2]).upper())
-        poster_markup.append(
-            f'<article class="hero-poster {poster_classes[index]}" style="--poster-accent:{accent}">'
-            f'<div class="poster-topline"><span>{language}</span><span>SG · {index + 1:02d}</span></div>'
-            f'<div class="poster-monogram">{monogram}</div>'
-            f'<div class="poster-bottomline"><div><div class="poster-title">{title}</div>'
-            f'<div class="poster-genre">{genre} · from the live catalog</div></div></div></article>'
-        )
-    posters = "".join(poster_markup)
+    hero_titles = database.get_all_movies().to_dict(orient="records")
+    num_movies = len(hero_titles)
+    step_time = 4.2  # Duration each group occupies the primary visible position
+    trans_time = 1.0 # Duration of transition between groups
+
+    # Arrange all movie albums into sequential 3-card clusters: (1,2,3), (4,5,6), (7,8,9)...
+    chunks = []
+    for start in range(0, num_movies, 3):
+        chunk = []
+        for s in range(3):
+            # Wrap around so that all slots (slot 0, slot 1, slot 2) maintain visual stacking
+            chunk.append(hero_titles[(start + s) % num_movies])
+        chunks.append((start, chunk))
+
+    num_groups = len(chunks)
+    total_duration = max(num_groups * step_time, 8.0)
+
+    # Calculate keyframe percentages for seamless downward rotation loop
+    p_hold = round(((step_time - trans_time) / total_duration) * 100, 3)
+    p_exit = round((step_time / total_duration) * 100, 3)
+    p_pre = round(p_exit + 0.02, 3)
+    p_enter = round(((total_duration - trans_time) / total_duration) * 100, 3)
+
+    poster_groups = []
+    for group_index, (start_idx, chunk_items) in enumerate(chunks):
+        group_cards = []
+        for slot, item in enumerate(chunk_items):
+            index = (start_idx + slot) % num_movies
+            accent = str(item.get("accent_color", "#5f789c"))
+            if not re.fullmatch(r"#[0-9a-fA-F]{6}", accent):
+                accent = "#5f789c"
+            title = esc(item.get("title", "StreamGlass original"))
+            language = esc(item.get("language", "Regional"))
+            genre = esc(item.get("primary_genre", "Discovery"))
+            monogram = esc("".join(token[0] for token in re.findall(r"[A-Za-z0-9]+", str(item.get("title", "SG")))[:2]).upper())
+            group_cards.append(
+                f'<article class="hero-poster catalog-slot-{slot}" style="--poster-accent:{accent}">' 
+                f'<div class="poster-topline"><span>{language}</span><span>SG · {index + 1:02d}</span></div>'
+                f'<div class="poster-monogram">{monogram}</div>'
+                f'<div class="poster-bottomline"><div><div class="poster-title">{title}</div>'
+                f'<div class="poster-genre">{genre} · from the live catalog</div></div></div></article>'
+            )
+        # Negative delay so group 0 starts active at 0s, and successive groups enter in 1,2,3 -> 4,5,6 sequence
+        delay = 0.0 if group_index == 0 else -round(total_duration - (group_index * step_time), 2)
+        poster_groups.append(f'<div class="hero-catalog-group" style="--catalog-delay:{delay}s">{"".join(group_cards)}</div>')
+    posters = "".join(poster_groups)
+
+    album_styles = f'''<style>
+    @keyframes catalog-rot-loop {{
+        0% {{ opacity: 1; transform: translateY(0) scale(1) rotate(0deg); pointer-events: auto; }}
+        {p_hold}% {{ opacity: 1; transform: translateY(0) scale(1) rotate(0deg); pointer-events: auto; }}
+        {p_exit}% {{ opacity: 0; transform: translateY(152px) scale(0.92) rotate(3deg); pointer-events: none; }}
+        {p_pre}% {{ opacity: 0; transform: translateY(-132px) scale(0.92) rotate(-3deg); pointer-events: none; }}
+        {p_enter}% {{ opacity: 0; transform: translateY(-132px) scale(0.92) rotate(-3deg); pointer-events: none; }}
+        100% {{ opacity: 1; transform: translateY(0) scale(1) rotate(0deg); pointer-events: auto; }}
+    }}
+    .hero-poster-album .hero-catalog-group {{
+        animation: catalog-rot-loop {total_duration:.2f}s linear infinite both;
+        animation-delay: var(--catalog-delay);
+    }}
+    .hero-poster-album:hover .hero-catalog-group {{
+        animation-play-state: paused !important;
+    }}
+    </style>'''
 
     with st.container(key="landing_hero"):
         copy_col, visual_col = st.columns([1.04, .96], gap="large")
@@ -608,6 +709,7 @@ if st.session_state.current_module == "landing":
                       <div class="landing-stat"><strong>{int(hero_metrics['movie_count']):,}</strong><span>catalog titles</span></div>
                       <div class="landing-stat"><strong>{int(hero_metrics['interaction_count']):,}</strong><span>watch signals</span></div>
                     </div>
+                    <div class="hero-poster-stack hero-poster-album" aria-label="Three titles from the live StreamGlass catalog">{album_styles}{posters}</div>
                 </div>''',
                 unsafe_allow_html=True,
             )
@@ -621,7 +723,6 @@ if st.session_state.current_module == "landing":
                     </svg>
                     <div class="signal-orbit"></div>
                     <div class="hero-signal-card"><span>Live recommendation signals</span><strong>Taste · language · co-watch</strong></div>
-                    <div class="hero-poster-stack">{posters}</div>
                     <div class="hero-match-badge"><span>Discovery, with context</span><strong>Made for every viewer</strong></div>
                 </div>''',
                 unsafe_allow_html=True,
@@ -708,29 +809,91 @@ elif st.session_state.current_module == "model":
     section_heading("Co-watch topology","Node scale reflects normalized degree centrality; links represent shared viewing behavior."); network=graph_engine.build_cowatch_graph_from_db().generate_plotly_network(); network.update_traces(selector=dict(mode="lines"),line=dict(color="rgba(60,60,67,.24)")); network.update_traces(selector=dict(mode="markers+text"),textfont=dict(color="#424245"),marker=dict(line=dict(color="#ffffff",width=1.3))); st.plotly_chart(apply_chart_theme(network,510),use_container_width=True,config={"displayModeBar":False})
 
 elif st.session_state.current_module == "studio":
-    brandline("Live studio"); page_header("Recommendation, side by side","See the cost of popularity-only ranking—and the benefit of personal context.","Select an active subscriber to compare the static platform feed with the StreamGlass hybrid feed from the same database.")
-    users_df=database.get_all_users(); user_options={row["user_id"]:f'{row["name"]} · {row["primary_language"]} · {row["persona_desc"][:44]}…' for _,row in users_df.iterrows()}; current_index=list(user_options).index(st.session_state.selected_user_id) if st.session_state.selected_user_id in user_options else 0
-    selected_user=st.selectbox("Active subscriber",list(user_options),index=current_index,format_func=lambda item:user_options[item]); st.session_state.selected_user_id=selected_user; raw_user=users_df[users_df["user_id"]==selected_user].iloc[0].to_dict(); subscriber=recommender.Subscriber.from_dict(raw_user); history=database.get_user_watch_history(selected_user); subscriber.load_history(history.to_dict(orient="records")); profile_surface(subscriber,len(history))
-    baseline,personalized=st.columns(2,gap="large")
-    with baseline:
-        st.markdown('<div class="feed-head"><h2>Popular now</h2><span>STATIC BASELINE</span></div><p class="feed-copy">The same ordering is delivered to every subscriber, regardless of language or prior viewing.</p>',unsafe_allow_html=True)
-        for item in engine.get_static_popular_feed(limit=6): title_card(item,primary_language=subscriber.primary_language,secondary_language=subscriber.secondary_language)
-    with personalized:
-        st.markdown('<div class="feed-head"><h2>For this subscriber</h2><span>STREAMGLASS</span></div><p class="feed-copy">Hybrid ranking uses observed ratings, co-watch topology, language affinity, and preferred genres.</p>',unsafe_allow_html=True); recommendations=engine.get_personalized_recommendations(subscriber,limit=6)
-        if recommendations:
-            for item in recommendations: title_card(item,personalized=True)
-        else: st.info("This subscriber has no remaining unwatched titles to recommend.")
-    section_heading("Record a viewing event","Commit a real interaction, then immediately refresh the recommendation engine.")
-    with st.expander("Watch and rate a title",expanded=False):
-        all_movies=database.get_all_movies(); watched_ids=set(subscriber.get_watched_movie_ids()); unwatched={row["movie_id"]:f'{row["title"]} · {row["language"]} · {row["primary_genre"]}' for _,row in all_movies.iterrows() if row["movie_id"] not in watched_ids}
-        if not unwatched: st.success("This subscriber has rated every title in the catalog.")
+    brandline("Live studio"); page_header("Recommendation, side by side","Your private StreamGlass studio.","The feeds below are generated only from the signed-in subscriber profile and its watch signals.")
+    users_df = database.get_all_users()
+    logged_in_id = st.session_state.get("logged_in_user_id")
+    if not logged_in_id:
+        st.markdown(
+            '''<section class="surface" style="text-align:center;padding:36px 24px;margin:20px 0;">
+                <div style="font-size:1.25rem;font-weight:740;color:var(--ink);margin-bottom:8px;">Sign in to view your Studio</div>
+                <p style="color:var(--muted);max-width:500px;margin:0 auto 20px;font-size:.9rem;line-height:1.55;">
+                    The Studio displays personalized recommendations, viewing history, and watch signals for your signed-in subscriber profile.
+                </p>
+            </section>''',
+            unsafe_allow_html=True
+        )
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("Sign in to StreamGlass", key="studio_login_cta", use_container_width=True):
+                open_login_dialog()
+                st.rerun()
+    else:
+        matched = users_df[users_df["user_id"] == logged_in_id]
+        if matched.empty:
+            raw_user = users_df.iloc[0].to_dict()
         else:
-            c1,c2,c3=st.columns([1.55,1,1],gap="medium")
-            with c1: target_movie=st.selectbox("Title",list(unwatched),format_func=lambda item:unwatched[item])
-            with c2: watch_percentage=st.slider("Completion",10,100,95,5,format="%d%%")
-            with c3: rating=st.slider("Rating",1.0,5.0,4.5,.5)
-            if st.button("Record interaction",use_container_width=True):
-                history_id=database.record_user_interaction(subscriber.user_id,target_movie,watch_percentage,rating); engine.refresh(); st.success(f"Interaction {history_id} was committed to SQLite. The ranking engine is refreshed."); st.rerun()
+            raw_user = matched.iloc[0].to_dict()
+        subscriber = recommender.Subscriber.from_dict(raw_user)
+        history = database.get_user_watch_history(subscriber.user_id)
+        subscriber.load_history(history.to_dict(orient="records"))
+
+        # Active Subscriber Section
+        section_heading("Active subscriber", "Only the signed-in viewer profile and its interactions are shown in this Studio.")
+        profile_surface(subscriber, len(history))
+
+        # Title Section (placed below Active Subscriber section and above both Popular Now and For This Subscriber)
+        section_heading("Title Section", "Watch, rate, and manage catalog titles, then inspect their effect on platform recommendation feeds.")
+        with st.expander("Watch and rate a title", expanded=False):
+            all_movies = database.get_all_movies()
+            watched_ids = set(subscriber.get_watched_movie_ids())
+            unwatched = {row["movie_id"]:f'{row["title"]} · {row["language"]} · {row["primary_genre"]}' for _,row in all_movies.iterrows() if row["movie_id"] not in watched_ids}
+            if not unwatched:
+                st.success("You have rated every title in the catalog.")
+            else:
+                c1,c2,c3 = st.columns([1.55,1,1],gap="medium")
+                with c1: target_movie = st.selectbox("Title",list(unwatched),format_func=lambda item:unwatched[item])
+                with c2: watch_percentage = st.slider("Completion",10,100,95,5,format="%d%%")
+                with c3: rating = st.slider("Rating",1.0,5.0,4.5,.5)
+                if st.button("Record interaction", key="record_studio_interaction", use_container_width=True):
+                    history_id = database.record_user_interaction(subscriber.user_id,target_movie,watch_percentage,rating)
+                    engine.refresh()
+                    st.success(f"Interaction {history_id} was recorded for {subscriber.name}. The ranking engine is refreshed.")
+                    st.rerun()
+
+        # Item 3: Add Movies option
+        with st.expander("Add Movies", expanded=False):
+            st.caption("Add a title to the shared demo catalog. It becomes available to this Studio immediately.")
+            with st.form("add_movie_form", clear_on_submit=True):
+                first, second = st.columns(2, gap="medium")
+                with first:
+                    movie_title = st.text_input("Movie title")
+                    movie_language = st.text_input("Language", value="Telugu")
+                    movie_year = st.number_input("Release year", min_value=1900, max_value=2100, value=2026, step=1)
+                with second:
+                    movie_genre = st.text_input("Primary genre", value="Drama")
+                    movie_director = st.text_input("Director")
+                    movie_duration = st.number_input("Duration (minutes)", min_value=1, max_value=500, value=120, step=1)
+                movie_secondary_genre = st.text_input("Secondary genre (optional)")
+                add_movie_submitted = st.form_submit_button("Add Movie", use_container_width=True)
+            if add_movie_submitted:
+                try:
+                    movie_id = database.add_movie(movie_title, movie_year, movie_language, movie_genre, movie_director, movie_secondary_genre, movie_duration)
+                    engine.refresh()
+                    st.success(f"{movie_title.strip()} was added to the catalog as {movie_id}.")
+                    st.rerun()
+                except ValueError as error:
+                    st.warning(str(error))
+
+        # Popular Now and For This Subscriber (below Title Section, highlighted headings)
+        baseline,personalized=st.columns(2,gap="large")
+        with baseline:
+            st.markdown('<div class="feed-head feed-head-popular"><h2>Popular Now</h2><span>STATIC BASELINE</span></div><p class="feed-copy">The same ordering is delivered to every subscriber, regardless of language or prior viewing.</p>',unsafe_allow_html=True)
+            for item in engine.get_static_popular_feed(limit=6): title_card(item,primary_language=subscriber.primary_language,secondary_language=subscriber.secondary_language)
+        with personalized:
+            st.markdown('<div class="feed-head feed-head-personal"><h2>For This Subscriber</h2><span>STREAMGLASS</span></div><p class="feed-copy">Hybrid ranking uses observed ratings, co-watch topology, language affinity, and preferred genres.</p>',unsafe_allow_html=True); recommendations=engine.get_personalized_recommendations(subscriber,limit=6)
+            if recommendations:
+                for item in recommendations: title_card(item,personalized=True)
+            else: st.info("This subscriber has no remaining unwatched titles to recommend.")
 
 elif st.session_state.current_module == "analytics":
     brandline("Analytics"); page_header("Catalog intelligence","Three views of a recommendation system’s structure.","Explore catalog partitions, centrality hubs, and the sparsity that makes hybrid recommendation valuable.")
@@ -768,4 +931,4 @@ elif st.session_state.current_module == "analytics":
 if st.session_state.login_dialog_open:
     show_login_dialog()
 
-st.markdown('<div style="height:18px"></div><div style="border-top:1px solid rgba(60,60,67,.12);padding:18px 0 0;color:#86868b;font-size:.76rem;text-align:center">StreamGlass · OTT subscriber and personalized recommendation system · JNTUK R23 · TEAM-18</div>',unsafe_allow_html=True)
+st.markdown('<div class="streamglass-footer"><div>StreamGlass · OTT subscriber and personalized recommendation system · JNTUK R23 · TEAM-18</div></div>',unsafe_allow_html=True)
