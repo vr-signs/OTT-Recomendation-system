@@ -1,0 +1,130 @@
+================================================================================
+STREAMGLASS: OTT SUBSCRIBER & PERSONALIZED RECOMMENDATION SYSTEM
+ACADEMIC VERIFICATION & EXECUTION TEST LOG
+Curriculum: JNTUK R23 Regulation - II B.Tech I Semester (AI & DS)
+Team: TEAM-18 | Project Code: 26
+Members: 
+  * 25B21A4502 — KOVVURI VENKATA REDDY
+  * 25B21A4503 — PANTADI HEMANTH DURGA PRASAD
+  * 25B21A4501 — BATTULA SRAVAN KUMAR
+  * 25B21A4504 — BODIREDDY KANAKA MANI SINDHURA DEVI
+  * 25B21A4506 — KAPA KUMAR
+================================================================================
+
+>>> [MODULE 1: DBMS (U1 & U2) RELATIONAL SCHEMA & ACID VERIFICATION]
+ SQLite Engine Version: 3.50.4
+ Database Storage Footprint: 52.0 KB
+ Table 'users' Row Count: 10
+ Table 'movies' Row Count: 20
+ Table 'watch_history' Transaction Count: 49
+ Relational Integrity: FOREIGN KEY constraints & B-Tree Indexes [ACTIVE]
+ Schema Normalization: Fully satisfies 1NF, 2NF, and 3NF.
+ Index Verification:
+   - idx_watch_user: ON watch_history(user_id) [VERIFIED]
+   - idx_watch_movie: ON watch_history(movie_id) [VERIFIED]
+   - idx_movie_lang_genre: ON movies(language, primary_genre) [VERIFIED]
+   - idx_movie_popularity: ON movies(popularity_score DESC) [VERIFIED]
+
+>>> [MODULE 2: DMGT (U2) EQUIVALENCE RELATIONS & PARTITIONS VERIFICATION]
+ Relation R: (x, y) in R <=> Genre(x) == Genre(y) AND Language(x) == Language(y)
+ Property 1 (Reflexivity): [PASS] - ∀ x ∈ S, (x R x)
+   Tested 20 items. Zero violations detected.
+ Property 2 (Symmetry):    [PASS] - ∀ x, y ∈ S, (x R y) ⟹ (y R x)
+   Tested 400 pairs. Zero violations detected.
+ Property 3 (Transitivity):[PASS] - ∀ x, y, z ∈ S, ((x R y) ∧ (y R z)) ⟹ (x R z)
+   Tested 8000 triplets. Zero violations detected.
+ Fundamental Theorem of Equivalence Relations (Partitioning): [PASS]
+   Universe size |S| = 20
+   Disjoint Quotient Classes |S/R| = 16
+   Pairwise Intersections: 0 (Strict Pairwise Disjointness Satisfied)
+   Exhaustive Union Coverage: 20 items (100% catalog coverage verified)
+
+ Quotient Classes Derived:
+   [Telugu :: Sci-Fi]     -> 1 title  (Kalki 2898 AD)
+   [Telugu :: Action]     -> 2 titles (RRR, Salaar: Part 1)
+   [Telugu :: Drama]      -> 1 title  (Hi Nanna)
+   [Telugu :: Comedy]     -> 1 title  (Jathi Ratnalu)
+   [Telugu :: Thriller]   -> 1 title  (HIT: The Second Case)
+   [Tamil :: Action]      -> 3 titles (Leo, Jailer, Vikram)
+   [Tamil :: Romance]     -> 1 title  (96)
+   [Tamil :: Thriller]    -> 1 title  (Por Thozhil)
+   [Tamil :: Comedy]      -> 1 title  (Mandela)
+   [Hindi :: Drama]       -> 1 title  (12th Fail)
+   [Hindi :: Thriller]    -> 1 title  (Andhadhun)
+   [Hindi :: Sci-Fi]      -> 1 title  (Brahmāstra)
+   [Hindi :: Comedy]      -> 1 title  (Stree 2)
+   [English :: Sci-Fi]    -> 2 titles (Interstellar, Inception)
+   [English :: Thriller]  -> 1 title  (Knives Out)
+   [English :: Comedy]    -> 1 title  (The Grand Budapest Hotel)
+
+>>> [MODULE 3: ADSA (U2) CO-WATCH GRAPH DATA STRUCTURE & TRAVERSAL]
+ Custom Graph Data Structure: Undirected Weighted Adjacency List (dict[str, dict[str, float]])
+ Total Graph Vertices |V|: 20
+ Total Graph Edges |E|:    82
+ Graph Density rho: 0.4316
+ Top Bridge Hub: M104 (Hi Nanna - Normalized Centrality: 0.8418)
+ Degree Centrality Top 5 Hubs:
+   1. M104 (Hi Nanna)         - 0.8418
+   2. M108 (Jailer)           - 0.6974
+   3. M106 (HIT: 2nd Case)    - 0.6895
+   4. M114 (Andhadhun)        - 0.6711
+   5. M102 (RRR)              - 0.6526
+
+ BFS Traversal from Seed 'M101' (Kalki 2898 AD, Max Depth = 2):
+   Discovery Order: M101 -> M102 -> M109 -> M118 -> M107 -> M108 -> M114 -> M117...
+   Radial Exploration Levels:
+     Level 0: M101
+     Level 1: M102, M109, M118, M107, M108, M114, M117, M103, M106, M119, M115
+     Level 2: M104, M111, M105, M116, M112, M113
+
+>>> [MODULE 4: OOPJ & PYTHON COLLABORATIVE FILTERING & HYBRID ENGINE]
+ Sparse User-Item Utility Matrix R: 10 Subscribers x 20 Movies
+ Matrix Sparsity Coefficient: 72.78% (Observed Ratings: 49, Unobserved: 151)
+ Item-Based Collaborative Filter: k-NN Cosine Similarity (k=5)
+ Step-by-Step Vector Math Verification between M101 (Kalki) and M102 (RRR):
+   Vector M101: [4.5, 0.0, 4.5, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+   Vector M102: [5.0, 0.0, 0.0, 0.0, 4.5, 0.0, 5.0, 0.0, 0.0, 0.0]
+   Dot Product (u . v)    = 45.0
+   L2 Norm ||u||_2        = 8.0932
+   L2 Norm ||v||_2        = 8.3815
+   Cosine Similarity      = 45.0 / (8.0932 * 8.3815) = 0.6634
+
+>>> [MODULE 5: EMPIRICAL BENCHMARK: STATIC POPULARITY VS STREAMGLASS AI FEED]
+ BASELINE BENCHMARK: Static Most-Popular Feed (Presented identically to ALL subscribers):
+   Rank #1: RRR (Rise Roar Revolt) (Telugu • Action) - Popularity Score: 99.0
+   Rank #2: Kalki 2898 AD (Telugu • Sci-Fi) - Popularity Score: 98.0
+   Rank #3: Interstellar (English • Sci-Fi) - Popularity Score: 97.0
+   Rank #4: 12th Fail (Hindi • Drama) - Popularity Score: 96.0
+   Rank #5: Leo: Bloody Sweet (Tamil • Action) - Popularity Score: 95.0
+   CRITICAL FLAW: Ignores user linguistic identity and historical viewing patterns!
+
+ --- Personalized StreamGlass AI Feed for Ravi Kumar [U101] ---
+ Profile: Telugu Native | Prefers: Action, Thriller | Watched: 6 titles
+   Recommendation #1: Hi Nanna (Telugu • Drama)
+     Match: 99% | Hybrid Score: 1.1988 | Reason: Predicted Rating: 4.7★ (k-NN) • Catalog Network Hub • Primary Lang (Telugu)
+   Recommendation #2: Jailer (Tamil • Action)
+     Match: 90% | Hybrid Score: 1.0552 | Reason: Predicted Rating: 4.5★ (k-NN) • Catalog Network Hub • Favorite Genre (Action)
+   Recommendation #3: Andhadhun (Hindi • Thriller)
+     Match: 85% | Hybrid Score: 1.0001 | Reason: Predicted Rating: 4.5★ (k-NN) • Catalog Network Hub • Favorite Genre (Thriller)
+
+ --- Personalized StreamGlass AI Feed for Priya Sundaram [U102] ---
+ Profile: Tamil Native | Prefers: Drama, Romance | Watched: 5 titles
+   Recommendation #1: Jailer (Tamil • Action)
+     Match: 88% | Hybrid Score: 1.0381 | Reason: Predicted Rating: 4.8★ (k-NN) • Catalog Network Hub • Primary Lang (Tamil)
+   Recommendation #2: RRR (Rise Roar Revolt) (Telugu • Action)
+     Match: 83% | Hybrid Score: 0.9794 | Reason: Predicted Rating: 5.0★ (k-NN) • Catalog Network Hub
+   Recommendation #3: HIT: The Second Case (Telugu • Thriller)
+     Match: 79% | Hybrid Score: 0.9252 | Reason: Predicted Rating: 4.7★ (k-NN) • Catalog Network Hub
+
+ --- Personalized StreamGlass AI Feed for Meera Nair [U110] (Cold-Start Subscriber) ---
+ Profile: Telugu Native | Prefers: Drama, Comedy | Watched: 0 titles
+   Recommendation #1: Hi Nanna (Telugu • Drama)
+     Match: 84% | Hybrid Score: 0.94 | Reason: DMGT Partition Top Pick [Telugu :: Drama]
+   Recommendation #2: Jathi Ratnalu (Telugu • Comedy)
+     Match: 79% | Hybrid Score: 0.88 | Reason: DMGT Partition Top Pick [Telugu :: Comedy]
+   Recommendation #3: RRR (Rise Roar Revolt) (Telugu • Action)
+     Match: 88% | Hybrid Score: 0.98 | Reason: DMGT Partition Top Pick [Telugu :: Action]
+
+================================================================================
+ALL ACADEMIC VERIFICATION CHECKS COMPLETED SUCCESSFULLY WITH ZERO ERRORS.
+================================================================================

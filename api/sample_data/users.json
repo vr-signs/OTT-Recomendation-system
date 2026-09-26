@@ -1,0 +1,92 @@
+[
+  {
+    "user_id": "U101",
+    "name": "Ravi Kumar",
+    "age": 24,
+    "primary_language": "Telugu",
+    "secondary_language": "Tamil",
+    "preferred_genres": ["Action", "Thriller"],
+    "persona_desc": "High-octane mass cinema and edge-of-the-seat crime thrillers lover."
+  },
+  {
+    "user_id": "U102",
+    "name": "Priya Sundaram",
+    "age": 28,
+    "primary_language": "Tamil",
+    "secondary_language": "Telugu",
+    "preferred_genres": ["Drama", "Romance"],
+    "persona_desc": "Aesthetic drama enthusiast, admirer of Mani Ratnam and realistic human stories."
+  },
+  {
+    "user_id": "U103",
+    "name": "Arjun Sharma",
+    "age": 26,
+    "primary_language": "Hindi",
+    "secondary_language": "English",
+    "preferred_genres": ["Sci-Fi", "Thriller"],
+    "persona_desc": "Speculative fiction, multiverse concepts, and psychological mystery seeker."
+  },
+  {
+    "user_id": "U104",
+    "name": "Ananya Rao",
+    "age": 22,
+    "primary_language": "Telugu",
+    "secondary_language": "English",
+    "preferred_genres": ["Comedy", "Romance"],
+    "persona_desc": "Feel-good romantic comedies, lighthearted banter, and coming-of-age films."
+  },
+  {
+    "user_id": "U105",
+    "name": "Karthik V",
+    "age": 31,
+    "primary_language": "Tamil",
+    "secondary_language": "Hindi",
+    "preferred_genres": ["Action", "Sci-Fi"],
+    "persona_desc": "Visual grandeur, superhero narratives, and futuristic dystopian spectacles."
+  },
+  {
+    "user_id": "U106",
+    "name": "Sneha Patel",
+    "age": 29,
+    "primary_language": "Hindi",
+    "secondary_language": "Telugu",
+    "preferred_genres": ["Drama", "Family"],
+    "persona_desc": "Emotional family epics, multi-generational sagas, and social dramas."
+  },
+  {
+    "user_id": "U107",
+    "name": "Vikram Varma",
+    "age": 35,
+    "primary_language": "Telugu",
+    "secondary_language": "Hindi",
+    "preferred_genres": ["Drama", "Action"],
+    "persona_desc": "Historical biopics, rural period epics, and traditional folklore narratives."
+  },
+  {
+    "user_id": "U108",
+    "name": "Divya M",
+    "age": 25,
+    "primary_language": "English",
+    "secondary_language": "Hindi",
+    "preferred_genres": ["Thriller", "Mystery"],
+    "persona_desc": "Neo-noir investigative procedurals, detective stories, and mind-bending plots."
+  },
+  {
+    "user_id": "U109",
+    "name": "Suresh Babu",
+    "age": 42,
+    "primary_language": "Telugu",
+    "secondary_language": "Tamil",
+    "preferred_genres": ["Comedy", "Drama"],
+    "persona_desc": "Vintage family entertainers, nostalgic regional comedy, and satirical dramas."
+  },
+  {
+    "user_id": "U110",
+    "name": "Meera Nair",
+    "age": 21,
+    "primary_language": "Telugu",
+    "secondary_language": "Malayalam",
+    "preferred_genres": ["Drama", "Comedy"],
+    "persona_desc": "Cold-start newcomer exploring the regional catalog with zero prior watch history."
+  }
+]
