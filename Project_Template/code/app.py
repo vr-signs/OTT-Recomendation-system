@@ -3,6 +3,7 @@
 import os
 import sys
 import html
+import math
 import re
 import base64
 import sqlite3
@@ -215,15 +216,30 @@ html, body, [class*="css"] {{ font-family:-apple-system,BlinkMacSystemFont,"SF P
 .st-key-liquid_top_nav .st-key-liquid_brand button:before {{ content:"";width:30px;height:30px;border-radius:10px;display:inline-grid;place-items:center;background:url("{BRAND_LOGO_DATA_URI}") center/cover no-repeat;box-shadow:0 5px 14px rgba(0,113,227,.24),inset 0 1px 0 rgba(255,255,255,.45); }}
 .st-key-liquid_top_nav .st-key-liquid_brand button:hover {{ background:transparent !important;transform:translateY(-1px) !important;filter:brightness(1.06) !important; }}
 .landing-header-marker {{ display:none !important; }}
-/* Landing page is a full-screen composition rather than a nested set of glass cards. */
-body:has(.landing-header-marker) .block-container {{ max-width:none !important;padding:0 !important; }}
-.st-key-liquid_top_nav:has(.landing-header-marker) {{ top:0 !important;left:0 !important;transform:none !important;width:100% !important;padding:20px clamp(22px,5vw,68px) !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important; }}
-.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stHorizontalBlock"] {{ display:flex !important;align-items:center !important;justify-content:space-between !important;gap:16px !important; }}
-.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"] {{ width:auto !important;min-width:0 !important; }}
+/* Landing page full-viewport composition: zero outer padding, no horizontal line, seamless fluid canvas */
+body:has(.landing-header-marker) .block-container,
+body:has(.landing-header-marker) [data-testid="stAppViewContainer"],
+body:has(.landing-header-marker) .main {{ max-width:100% !important;padding:0 !important;margin:0 !important;overflow-x:hidden !important; }}
+.st-key-landing_top_nav,
+.st-key-liquid_top_nav:has(.landing-header-marker) {{ position:fixed !important;top:0 !important;left:0 !important;transform:none !important;width:100% !important;padding:22px clamp(24px,5vw,68px) !important;border:0 !important;border-top:0 !important;border-bottom:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;pointer-events:none !important;z-index:999999 !important; }}
+.st-key-landing_top_nav [data-testid="stHorizontalBlock"],
+.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stHorizontalBlock"] {{ display:flex !important;align-items:center !important;justify-content:space-between !important;gap:16px !important;border:none !important;border-bottom:none !important;border-top:none !important; }}
+.st-key-landing_top_nav [data-testid="stColumn"],
+.st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"] {{ width:auto !important;min-width:0 !important;border:none !important;border-left:0 !important;padding:0 !important; }}
+.st-key-landing_top_nav [data-testid="stColumn"]:first-child,
 .st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:first-child {{ flex:1 1 auto !important;justify-content:flex-start !important; }}
+.st-key-landing_top_nav [data-testid="stColumn"]:last-child,
 .st-key-liquid_top_nav:has(.landing-header-marker) [data-testid="stColumn"]:last-child {{ flex:0 0 auto !important;justify-content:flex-end !important;border-left:0 !important;padding-left:0 !important; }}
-.st-key-liquid_top_nav:has(.landing-header-marker) .st-key-liquid_brand button {{ position:fixed !important;z-index:1000000 !important;top:20px !important;left:clamp(22px,5vw,68px) !important;width:auto !important; }}
-.st-key-liquid_top_nav:has(.landing-header-marker) .st-key-liquid_login button {{ position:fixed !important;z-index:1000000 !important;top:20px !important;right:clamp(22px,5vw,68px) !important;width:auto !important; }}
+.st-key-landing_top_nav .st-key-liquid_brand button,
+.st-key-liquid_top_nav:has(.landing-header-marker) .st-key-liquid_brand button {{ position:fixed !important;z-index:1000000 !important;top:22px !important;left:clamp(24px,5vw,68px) !important;width:auto !important;pointer-events:auto !important;min-height:32px !important;padding:0 1px !important;border:0 !important;border-radius:10px !important;background:transparent !important;color:var(--ink) !important;font-size:.92rem !important;font-weight:740 !important;letter-spacing:-.025em !important;box-shadow:none !important;display:flex !important;align-items:center !important;gap:10px !important;white-space:nowrap !important; }}
+.st-key-landing_top_nav .st-key-liquid_brand button:before,
+.st-key-liquid_top_nav:has(.landing-header-marker) .st-key-liquid_brand button:before {{ content:"";width:30px;height:30px;border-radius:10px;display:inline-grid;place-items:center;background:url("{BRAND_LOGO_DATA_URI}") center/cover no-repeat;box-shadow:0 5px 14px rgba(0,113,227,.24),inset 0 1px 0 rgba(255,255,255,.45); }}
+.st-key-landing_top_nav .st-key-liquid_brand button:hover,
+.st-key-liquid_top_nav:has(.landing-header-marker) .st-key-liquid_brand button:hover {{ background:transparent !important;transform:translateY(-1px) !important;filter:brightness(1.06) !important; }}
+.st-key-landing_top_nav .st-key-liquid_login button,
+.st-key-liquid_top_nav:has(.landing-header-marker) .st-key-liquid_login button {{ position:fixed !important;z-index:1000000 !important;top:22px !important;right:clamp(24px,5vw,68px) !important;width:auto !important;pointer-events:auto !important;min-height:36px !important;padding:0 15px !important;border:1px solid rgba(0,113,227,.24) !important;border-radius:13px !important;background:linear-gradient(135deg,#1683f5,#0066d5) !important;color:#fff !important;font-size:.78rem !important;font-weight:700 !important;white-space:nowrap !important;box-shadow:0 6px 16px rgba(0,113,227,.20),inset 0 1px 0 rgba(255,255,255,.3) !important; }}
+.st-key-landing_top_nav .st-key-liquid_login button:hover,
+.st-key-liquid_top_nav:has(.landing-header-marker) .st-key-liquid_login button:hover {{ transform:translateY(-1px) !important;filter:brightness(1.06) !important;box-shadow:0 9px 20px rgba(0,113,227,.27),inset 0 1px 0 rgba(255,255,255,.35) !important; }}
 .st-key-liquid_top_nav > [data-testid="stElementContainer"],
 .st-key-liquid_top_nav [data-testid="stRadio"] {{ width:100% !important; margin:0 !important; padding:0 !important; }}
  .st-key-liquid_top_nav [data-testid="stRadioGroup"],
@@ -287,63 +303,56 @@ body:has(.landing-header-marker) .block-container {{ max-width:none !important;p
 .section-heading p {{ margin:4px 0 0;color:var(--muted);font-size:.88rem; }}
 
 /* One-screen welcome surface: a live-feeling catalog and recommendation signal map. */
-.st-key-landing_hero {{ position:relative;isolation:isolate;overflow:hidden;min-height:clamp(520px,calc(100svh - 190px),700px);margin:-20px 0 0;padding:clamp(26px,4vw,54px);border:1px solid var(--line-soft);border-radius:32px;background:radial-gradient(ellipse at 78% 52%,rgba(0,113,227,.13),transparent 35%),radial-gradient(ellipse at 15% 2%,rgba(111,139,255,.10),transparent 31%),linear-gradient(135deg,color-mix(in srgb,var(--surface) 76%,transparent),color-mix(in srgb,var(--canvas) 76%,transparent));box-shadow:0 24px 70px rgba(20,30,55,.07),inset 0 1px 0 rgba(255,255,255,.58);backdrop-filter:blur(16px) saturate(145%);-webkit-backdrop-filter:blur(16px) saturate(145%); }}
-body:has(.landing-header-marker) .st-key-landing_hero {{ min-height:100svh;margin:0 !important;padding:clamp(104px,13vh,142px) clamp(26px,6vw,92px) 68px !important;border:0 !important;border-radius:0 !important;background:radial-gradient(ellipse at 76% 52%,rgba(0,113,227,.13),transparent 35%),radial-gradient(ellipse at 13% 3%,rgba(111,139,255,.10),transparent 31%),linear-gradient(135deg,color-mix(in srgb,var(--surface) 92%,transparent),var(--canvas)) !important;box-shadow:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important; }}
+:root {{
+    --orbit-rx: 205px;
+    --orbit-ry: 175px;
+}}
+@keyframes landing-viewport-reveal {{ 0% {{ opacity:0;filter:blur(10px);transform:translateY(16px) scale(.99); }} 100% {{ opacity:1;filter:blur(0);transform:translateY(0) scale(1); }} }}
+.st-key-landing_hero {{ position:relative;isolation:isolate;overflow:hidden;overflow-x:clip !important;min-height:100vh !important;min-height:100svh !important;margin:0 !important;padding:clamp(96px,12vh,138px) clamp(24px,5vw,72px) 48px !important;border:0 !important;border-top:0 !important;border-bottom:0 !important;border-radius:0 !important;background:radial-gradient(ellipse at 76% 50%,rgba(0,113,227,.14),transparent 42%),radial-gradient(ellipse at 18% 12%,rgba(111,139,255,.09),transparent 36%),linear-gradient(135deg,color-mix(in srgb,var(--surface) 92%,transparent),var(--canvas)) !important;box-shadow:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;display:flex !important;flex-direction:column !important;justify-content:center !important;animation:landing-viewport-reveal 960ms cubic-bezier(.16,1,.3,1) both; }}
+body:has(.landing-header-marker) .st-key-landing_hero {{ min-height:100vh !important;min-height:100svh !important;margin:0 !important;padding:clamp(96px,12vh,138px) clamp(24px,5vw,72px) 48px !important;border:0 !important;border-radius:0 !important;box-shadow:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important; }}
 /* Keep the liquid contour in the artwork, never through the fixed brand controls. */
 body:has(.landing-header-marker) .st-key-landing_hero:before {{ top:clamp(180px,25vh,240px) !important;right:-145px !important; }}
 .st-key-landing_hero:before {{ content:"";position:absolute;z-index:-1;width:390px;height:390px;right:-145px;top:-170px;border:1px solid rgba(0,113,227,.12);border-radius:50%;box-shadow:0 0 0 36px rgba(0,113,227,.025),0 0 0 82px rgba(0,113,227,.018);animation:orbit-drift 24s linear infinite; }}
 .st-key-landing_hero [data-testid="stHorizontalBlock"] {{ min-height:100%;align-items:center !important;gap:clamp(24px,4vw,64px) !important; }}
-.landing-copy {{ max-width:580px;padding:14px 0 18px;animation:landing-reveal 720ms cubic-bezier(.2,.8,.2,1) both; }}
+.landing-copy {{ max-width:580px;padding:14px 0 18px;animation:landing-reveal 850ms cubic-bezier(.16,1,.3,1) both; }}
 .landing-kicker {{ display:inline-flex;align-items:center;gap:9px;padding:7px 11px;border:1px solid var(--line-soft);border-radius:999px;background:color-mix(in srgb,var(--surface) 74%,transparent);color:var(--muted);font-size:.69rem;font-weight:730;letter-spacing:.11em;text-transform:uppercase;transition:translate 260ms cubic-bezier(.2,.8,.2,1),border-color 260ms ease,box-shadow 260ms ease;animation:landing-line 620ms 120ms cubic-bezier(.2,.8,.2,1) both; }}
 .landing-live-dot {{ width:7px;height:7px;border-radius:50%;background:#30d158;box-shadow:0 0 0 4px rgba(48,209,88,.14);animation:signal-pulse 2.4s ease-out infinite; }}
-.landing-copy h1 {{ max-width:600px;margin:21px 0 16px;color:var(--ink);font-size:clamp(2.8rem,5.5vw,5.25rem);line-height:.99;letter-spacing:-.067em;font-weight:760;transition:translate 300ms cubic-bezier(.2,.8,.2,1),filter 300ms ease;text-wrap:balance;animation:landing-line 720ms 190ms cubic-bezier(.2,.8,.2,1) both; }}
+.landing-copy h1 {{ max-width:600px;margin:21px 0 16px;color:var(--ink);font-size:clamp(2.8rem,5.5vw,5.25rem);line-height:.99;letter-spacing:-.067em;font-weight:760;transition:translate 300ms cubic-bezier(.2,.8,.2,1),filter 300ms ease;text-wrap:balance;animation:landing-line 780ms 140ms cubic-bezier(.16,1,.3,1) both; }}
 .landing-copy h1 > [data-heading-text] {{ color:var(--ink) !important; }}
 .landing-copy h1 > [data-heading-text] > span {{ color:var(--blue) !important; }}
-.landing-copy p {{ max-width:520px;color:var(--muted);font-size:1.02rem;line-height:1.62;transition:translate 260ms cubic-bezier(.2,.8,.2,1),color 260ms ease;animation:landing-line 720ms 270ms cubic-bezier(.2,.8,.2,1) both; }}
-.landing-proofline {{ display:flex;flex-wrap:wrap;gap:8px;margin-top:22px;animation:landing-line 720ms 350ms cubic-bezier(.2,.8,.2,1) both; }}
+.landing-copy p {{ max-width:520px;color:var(--muted);font-size:1.02rem;line-height:1.62;transition:translate 260ms cubic-bezier(.2,.8,.2,1),color 260ms ease;animation:landing-line 780ms 220ms cubic-bezier(.16,1,.3,1) both; }}
+.landing-proofline {{ display:flex;flex-wrap:wrap;gap:8px;margin-top:22px;animation:landing-line 780ms 300ms cubic-bezier(.16,1,.3,1) both; }}
 .landing-proofline span {{ padding:7px 10px;border:1px solid var(--line-soft);border-radius:999px;background:color-mix(in srgb,var(--surface) 74%,transparent);color:var(--ink-soft);font-size:.72rem;font-weight:620;transition:translate 240ms cubic-bezier(.2,.8,.2,1),background 240ms ease,border-color 240ms ease,box-shadow 240ms ease; }}
-.landing-stats {{ display:flex;gap:24px;margin-top:29px;animation:landing-line 720ms 430ms cubic-bezier(.2,.8,.2,1) both; }}
+.landing-stats {{ display:flex;gap:24px;margin-top:29px;animation:landing-line 780ms 380ms cubic-bezier(.16,1,.3,1) both; }}
 .landing-stat {{ display:flex;flex-direction:column;gap:3px;padding:5px 7px;border-radius:12px;transition:translate 240ms cubic-bezier(.2,.8,.2,1),background 240ms ease,box-shadow 240ms ease; }}
 .landing-stat strong {{ color:var(--ink);font-size:1.1rem;letter-spacing:-.04em; }}
 .landing-stat span {{ color:var(--muted);font-size:.68rem; }}
-.landing-visual {{ position:relative;min-height:420px;display:grid;place-items:center;perspective:1200px;animation:landing-reveal 900ms 100ms cubic-bezier(.2,.8,.2,1) both; }}
+.landing-visual {{ position:relative;min-height:480px;width:100%;display:grid;place-items:center;perspective:1200px;animation:landing-reveal 950ms 80ms cubic-bezier(.16,1,.3,1) both; }}
 .signal-map {{ position:absolute;z-index:1;width:112%;height:105%;inset:-2% -6%;overflow:visible;opacity:.9;transition:opacity 360ms ease,filter 360ms ease; }}
 .signal-map circle {{ fill:#48a6ff;filter:drop-shadow(0 0 7px rgba(41,151,255,.78)); }}
 .signal-orbit {{ position:absolute;width:min(92%,440px);aspect-ratio:1;border:1px solid rgba(0,113,227,.18);border-radius:50%;transform:rotate(-14deg);box-shadow:0 0 0 35px rgba(0,113,227,.025),0 0 0 76px rgba(0,113,227,.018);transition:scale 420ms cubic-bezier(.2,.8,.2,1),filter 420ms ease;animation:orbit-drift 32s linear infinite; }}
 .signal-orbit:before,.signal-orbit:after {{ content:"";position:absolute;width:10px;height:10px;border-radius:50%;background:#54a7ff;box-shadow:0 0 20px rgba(41,151,255,.8); }}
 .signal-orbit:before {{ top:14%;left:18%; }}
 .signal-orbit:after {{ right:8%;bottom:28%;width:7px;height:7px;background:#55d6ad; }}
-.hero-signal-card {{ position:absolute;z-index:3;top:5%;right:2%;padding:12px 15px;border:1px solid var(--glass-border);border-radius:16px;background:var(--glass-bg);box-shadow:0 14px 30px rgba(10,20,40,.12),inset 0 1px 0 var(--glass-inset);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);transition:transform 260ms cubic-bezier(.2,.8,.2,1),box-shadow 260ms ease;animation:float-card 6s ease-in-out infinite,poster-reveal 720ms 180ms cubic-bezier(.2,.8,.2,1) both; }}
+.hero-signal-card {{ position:absolute;z-index:30;top:4%;right:2%;padding:12px 15px;border:1px solid var(--glass-border);border-radius:16px;background:var(--glass-bg);box-shadow:0 14px 30px rgba(10,20,40,.12),inset 0 1px 0 var(--glass-inset);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);transition:transform 260ms cubic-bezier(.2,.8,.2,1),box-shadow 260ms ease;animation:float-card 6s ease-in-out infinite,poster-reveal 720ms 180ms cubic-bezier(.2,.8,.2,1) both; }}
 .hero-signal-card span {{ display:block;color:var(--muted);font-size:.61rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase; }}
 .hero-signal-card strong {{ display:block;margin-top:4px;color:var(--ink);font-size:.88rem; }}
-.hero-poster-stack {{ position:relative;z-index:2;width:min(100%,420px);height:350px; }}
-.hero-poster-album {{ position:relative;width:min(100%,430px);height:136px;margin-top:17px;overflow:hidden;perspective:1000px;animation:landing-line 760ms 520ms cubic-bezier(.2,.8,.2,1) both; }}
-.hero-catalog-group {{ position:absolute;inset:0;will-change:transform,opacity; }}
-.hero-poster-album:hover .hero-catalog-group {{ animation-play-state:paused !important; }}
-.hero-poster {{ position:absolute;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;padding:17px;border:1px solid rgba(255,255,255,.42);border-radius:22px;color:white;box-shadow:0 28px 58px rgba(8,18,36,.25),inset 0 1px 0 rgba(255,255,255,.48);transition:translate 260ms cubic-bezier(.2,.8,.2,1),box-shadow 260ms ease; }}
-.hero-poster:before {{ content:"";position:absolute;inset:0;background:linear-gradient(155deg,rgba(255,255,255,.28),transparent 38%,rgba(4,11,25,.52)); }}
-.hero-poster:after {{ content:"";position:absolute;width:190px;height:190px;right:-72px;top:-72px;border:1px solid rgba(255,255,255,.38);border-radius:50%;box-shadow:0 0 0 17px rgba(255,255,255,.08),0 0 0 39px rgba(255,255,255,.045); }}
-.hero-poster-main {{ width:204px;height:296px;left:25%;top:7%;z-index:3;background:linear-gradient(150deg,var(--poster-accent),#101c36 84%);transform:rotate(-5deg);animation:float-card 7s ease-in-out infinite,poster-reveal 820ms 120ms cubic-bezier(.2,.8,.2,1) both; }}
-.hero-poster-side {{ width:174px;height:246px;right:0;top:24%;z-index:2;background:linear-gradient(150deg,var(--poster-accent),#17223b 88%);transform:rotate(8deg);animation:float-card 8s ease-in-out -2s infinite,poster-reveal 820ms 250ms cubic-bezier(.2,.8,.2,1) both; }}
-.hero-poster-back {{ width:150px;height:218px;left:3%;top:29%;z-index:1;background:linear-gradient(150deg,var(--poster-accent),#252041 88%);transform:rotate(-14deg);animation:float-card 9s ease-in-out -4s infinite,poster-reveal 820ms 360ms cubic-bezier(.2,.8,.2,1) both; }}
-/* Every catalog group arrives together, hovers briefly, then slips below the viewport. */
-.hero-poster-album .hero-poster {{ padding:10px 11px;border-radius:15px;transform-origin:center bottom;cursor:pointer; }}
-.hero-poster-album .catalog-slot-0 {{ width:108px;height:126px;left:31%;top:0;z-index:3;transform:rotate(-5deg); }}
-.hero-poster-album .catalog-slot-1 {{ width:94px;height:112px;right:3%;top:15px;z-index:2;transform:rotate(8deg); }}
-.hero-poster-album .catalog-slot-2 {{ width:88px;height:104px;left:5%;top:23px;z-index:1;transform:rotate(-14deg); }}
-.hero-poster-album .poster-monogram {{ inset:35% 0 auto;font-size:2rem; }}
-.hero-poster-album .poster-title {{ font-size:.64rem; }}
-.hero-poster-album .poster-genre,.hero-poster-album .poster-topline span {{ font-size:.47rem; }}
-.hero-poster:hover {{ z-index:5;translate:0 -9px;box-shadow:0 32px 60px rgba(8,18,36,.30),inset 0 1px 0 rgba(255,255,255,.55); }}
-.poster-topline,.poster-bottomline {{ position:relative;z-index:1;display:flex;justify-content:space-between;gap:8px;align-items:center; }}
-.poster-topline span {{ color:rgba(255,255,255,.86);font-size:.59rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase; }}
-.poster-monogram {{ position:absolute;inset:35% 0 auto;text-align:center;color:rgba(255,255,255,.38);font-size:3.7rem;font-weight:800;letter-spacing:-.12em;text-shadow:0 8px 30px rgba(0,0,0,.2); }}
-.poster-bottomline {{ align-items:flex-end; }}
-.poster-title {{ max-width:88%;font-size:.91rem;font-weight:760;line-height:1.08;letter-spacing:-.03em;text-shadow:0 2px 12px rgba(0,0,0,.35); }}
-.poster-genre {{ margin-top:5px;color:rgba(255,255,255,.77);font-size:.61rem; }}
-.hero-match-badge {{ position:absolute;z-index:4;left:0;bottom:5%;padding:13px 15px;border:1px solid var(--glass-border);border-radius:17px;background:var(--glass-bg);color:var(--ink);box-shadow:0 16px 34px rgba(10,20,40,.14),inset 0 1px 0 var(--glass-inset);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);transition:transform 260ms cubic-bezier(.2,.8,.2,1),box-shadow 260ms ease;animation:float-card 7.5s ease-in-out -3s infinite,poster-reveal 760ms 300ms cubic-bezier(.2,.8,.2,1) both; }}
+.hero-match-badge {{ position:absolute;z-index:30;left:0;bottom:4%;padding:13px 15px;border:1px solid var(--glass-border);border-radius:17px;background:var(--glass-bg);color:var(--ink);box-shadow:0 16px 34px rgba(10,20,40,.14),inset 0 1px 0 var(--glass-inset);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);transition:transform 260ms cubic-bezier(.2,.8,.2,1),box-shadow 260ms ease;animation:float-card 7.5s ease-in-out -3s infinite,poster-reveal 760ms 300ms cubic-bezier(.2,.8,.2,1) both; }}
 .hero-match-badge span {{ display:block;color:var(--muted);font-size:.61rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase; }}
 .hero-match-badge strong {{ display:block;margin-top:3px;font-size:.84rem; }}
+.movie-orbit-stage {{ position:absolute;inset:0;width:100%;height:100%;pointer-events:auto;z-index:10; }}
+.movie-orbit-stage:hover .hero-orbital-card,
+.landing-visual:hover .hero-orbital-card {{ animation-play-state:paused !important; }}
+.hero-orbital-card {{ position:absolute;top:50%;left:50%;width:120px;height:156px;border-radius:18px;overflow:hidden;padding:11px 12px;display:flex;flex-direction:column;justify-content:space-between;color:#ffffff;border:1px solid rgba(255,255,255,.42);background:linear-gradient(155deg,var(--poster-accent,#0071e3),#0b1528 88%);box-shadow:0 22px 48px rgba(6,14,30,.30),inset 0 1px 0 rgba(255,255,255,.52);cursor:pointer;user-select:none;will-change:transform,opacity;transition:box-shadow 260ms ease,border-color 260ms ease,filter 260ms ease; }}
+.hero-orbital-card:before {{ content:"";position:absolute;inset:0;background:linear-gradient(150deg,rgba(255,255,255,.32) 0%,transparent 40%,rgba(2,6,18,.56) 100%);pointer-events:none; }}
+.hero-orbital-card:after {{ content:"";position:absolute;width:136px;height:136px;right:-45px;top:-45px;border:1px solid rgba(255,255,255,.28);border-radius:50%;box-shadow:0 0 0 11px rgba(255,255,255,.06),0 0 0 26px rgba(255,255,255,.03);pointer-events:none; }}
+.hero-orbital-card:hover {{ z-index:60 !important;filter:brightness(1.12);box-shadow:0 32px 64px rgba(0,113,227,.40),inset 0 1px 0 rgba(255,255,255,.7) !important;border-color:rgba(255,255,255,.85) !important; }}
+.hero-orbital-card .poster-topline {{ position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:6px; }}
+.hero-orbital-card .poster-topline span {{ font-size:.54rem;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.90);text-shadow:0 1px 4px rgba(0,0,0,.4); }}
+.hero-orbital-card .poster-monogram {{ position:absolute;inset:34% 0 auto;text-align:center;color:rgba(255,255,255,.32);font-size:2.6rem;font-weight:800;letter-spacing:-.09em;text-shadow:0 4px 18px rgba(0,0,0,.25);pointer-events:none; }}
+.hero-orbital-card .poster-bottomline {{ position:relative;z-index:2; }}
+.hero-orbital-card .poster-title {{ font-size:.73rem;font-weight:750;line-height:1.15;letter-spacing:-.025em;color:#ffffff;text-shadow:0 1px 8px rgba(0,0,0,.6);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }}
+.hero-orbital-card .poster-genre {{ margin-top:3px;font-size:.53rem;font-weight:600;color:rgba(255,255,255,.80);letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }}
 .st-key-hero_open_overview div.stButton > button {{ background:color-mix(in srgb,var(--surface) 76%,transparent) !important;color:var(--ink) !important;border:1px solid var(--line-soft) !important;box-shadow:inset 0 1px 0 var(--glass-inset) !important; }}
 .st-key-hero_open_overview div.stButton > button:hover {{ background:var(--surface-raised) !important;transform:translateY(-1px) !important; }}
 .login-intro {{ color:var(--muted);font-size:.88rem;line-height:1.55;margin:0 0 14px; }}
@@ -502,23 +511,38 @@ body:has(.landing-header-marker) .streamglass-footer {{ position:fixed;z-index:4
     .landing-proofline {{ gap:6px;margin-top:12px; }}
     .landing-proofline span {{ padding:6px 8px;font-size:.66rem; }}
     .landing-stats {{ gap:17px;margin-top:15px; }}
-    .landing-visual {{ min-height:300px; }}
-    .hero-poster-stack:not(.hero-poster-album) {{ height:300px;transform:scale(.84); }}
-    .hero-poster-album {{ height:124px;margin-top:14px;transform:none; }}
-    .hero-poster-album .catalog-slot-0 {{ left:29%; }}
-    .hero-poster:hover {{ translate:0 -5px; }}
+    :root {{
+        --orbit-rx: 155px;
+        --orbit-ry: 135px;
+    }}
+    .st-key-landing_top_nav,
+    .st-key-liquid_top_nav:has(.landing-header-marker) {{ padding:16px 20px !important; }}
+    .st-key-landing_top_nav .st-key-liquid_brand button,
+    .st-key-liquid_top_nav:has(.landing-header-marker) .st-key-liquid_brand button {{ top:16px !important;left:20px !important; }}
+    .st-key-landing_top_nav .st-key-liquid_login button,
+    .st-key-liquid_top_nav:has(.landing-header-marker) .st-key-liquid_login button {{ top:16px !important;right:20px !important; }}
+    .landing-visual {{ min-height:380px; }}
+    .hero-orbital-card {{ width:100px;height:132px;padding:9px 10px;border-radius:15px; }}
+    .hero-orbital-card .poster-title {{ font-size:.66rem; }}
+    .hero-orbital-card .poster-genre {{ font-size:.48rem; }}
+    .hero-orbital-card .poster-monogram {{ font-size:2.1rem; }}
 }}
 @media (max-width:760px) {{
-    .st-key-landing_hero {{ min-height:auto;margin:-10px 0 0;padding:18px 20px;border-radius:25px; }}
+    :root {{
+        --orbit-rx: 128px;
+        --orbit-ry: 112px;
+    }}
+    .st-key-landing_hero {{ min-height:100svh;margin:0 !important;padding:90px 20px 58px !important;border:0 !important;border-radius:0 !important; }}
     .landing-copy {{ padding:8px 0 0; }}
     .landing-copy h1 {{ font-size:clamp(2.45rem,9vw,3.1rem);margin:15px 0 10px; }}
     .landing-copy p {{ font-size:.93rem; }}
     .landing-proofline {{ margin-top:12px; }}
     .landing-stats {{ margin-top:15px; }}
-    .landing-visual {{ min-height:300px;margin-top:8px; }}
-    .hero-poster-stack:not(.hero-poster-album) {{ height:300px;transform:scale(.84); }}
-    .hero-poster-album {{ height:124px;margin-top:14px;transform:none; }}
-    .hero-poster-album .catalog-slot-0 {{ left:31%; }}
+    .landing-visual {{ min-height:340px;margin-top:12px; }}
+    .hero-orbital-card {{ width:88px;height:118px;padding:8px 9px;border-radius:13px; }}
+    .hero-orbital-card .poster-title {{ font-size:.60rem; }}
+    .hero-orbital-card .poster-genre {{ font-size:.45rem; }}
+    .hero-orbital-card .poster-monogram {{ font-size:1.8rem; }}
     .hero-signal-card {{ top:0;right:0; }}
     .hero-match-badge {{ bottom:0; }}
     body:has(.landing-header-marker) .st-key-landing_hero {{ min-height:100svh;margin:0 !important;padding:90px 20px 58px !important;border:0 !important;border-radius:0 !important; }}
@@ -532,8 +556,8 @@ body:has(.landing-header-marker) .streamglass-footer {{ position:fixed;z-index:4
     [data-testid="stTabs"] [role="tablist"] {{ overflow-x:auto; }}
 }}
 @media (prefers-reduced-motion:reduce) {{
-    .st-key-landing_hero:before,.signal-orbit,.hero-poster,.hero-signal-card,.hero-match-badge,.landing-live-dot,.landing-copy,.landing-visual {{ animation:none !important; }}
-    .hero-poster,.title-card,.nav-tab {{ transition:none !important; }}
+    .st-key-landing_hero:before,.signal-orbit,.hero-poster,.hero-signal-card,.hero-match-badge,.landing-live-dot,.landing-copy,.landing-visual,.hero-orbital-card {{ animation:none !important; }}
+    .hero-poster,.title-card,.nav-tab,.hero-orbital-card {{ transition:none !important; }}
 }}
 </style>
 """
@@ -642,7 +666,7 @@ def show_login_dialog():
     )
 
 if is_landing:
-    with st.container(key="liquid_top_nav"):
+    with st.container(key="landing_top_nav"):
         landing_brand_col, landing_login_col = st.columns([.86, .14], gap="small")
         with landing_brand_col:
             st.markdown('<span class="landing-header-marker" aria-hidden="true"></span>', unsafe_allow_html=True)
@@ -713,68 +737,80 @@ if st.session_state.current_module == "landing":
     hero_metrics = database.get_db_metrics()
     hero_titles = database.get_all_movies().to_dict(orient="records")
     num_movies = len(hero_titles)
-    step_time = 4.2  # Duration each group occupies the primary visible position
-    trans_time = 1.0 # Duration of transition between groups
+    total_orbit_duration = 52.0  # seconds for full cinematic 360-degree orbital revolution
 
-    # Arrange all movie albums into sequential 3-card clusters: (1,2,3), (4,5,6), (7,8,9)...
-    chunks = []
-    for start in range(0, num_movies, 3):
-        chunk = []
-        for s in range(3):
-            # Wrap around so that all slots (slot 0, slot 1, slot 2) maintain visual stacking
-            chunk.append(hero_titles[(start + s) % num_movies])
-        chunks.append((start, chunk))
+    # Build continuous orbital keyframes across all movies
+    steps = 40
+    keyframe_stops = []
+    for k in range(steps + 1):
+        pct = round((k / steps) * 100, 2)
+        u = k / steps
+        theta = -math.pi / 3 + u * 2 * math.pi
+        cos_val = round(math.cos(theta), 4)
+        sin_val = round(math.sin(theta), 4)
 
-    num_groups = len(chunks)
-    total_duration = max(num_groups * step_time, 8.0)
+        if u <= 0.16:
+            prog = u / 0.16
+            opacity = round(0.0 + 0.88 * prog, 3)
+            scale = round(0.76 + 0.22 * prog, 3)
+            z_idx = int(8 + 10 * prog)
+            pt = "auto" if opacity > 0.3 else "none"
+        elif u <= 0.62:
+            prog = (u - 0.16) / 0.46
+            peak = math.sin(prog * math.pi)
+            opacity = round(0.88 + 0.12 * peak, 3)
+            scale = round(0.96 + 0.12 * peak, 3)
+            z_idx = int(18 + 7 * peak)
+            pt = "auto"
+        elif u <= 0.80:
+            prog = (u - 0.62) / 0.18
+            opacity = round(0.88 * (1.0 - prog), 3)
+            scale = round(0.96 - 0.22 * prog, 3)
+            z_idx = int(14 * (1.0 - prog))
+            pt = "auto" if opacity > 0.3 else "none"
+        else:
+            opacity = 0.0
+            scale = 0.72
+            z_idx = 1
+            pt = "none"
 
-    # Calculate keyframe percentages for seamless downward rotation loop
-    p_hold = round(((step_time - trans_time) / total_duration) * 100, 3)
-    p_exit = round((step_time / total_duration) * 100, 3)
-    p_pre = round(p_exit + 0.02, 3)
-    p_enter = round(((total_duration - trans_time) / total_duration) * 100, 3)
+        tilt = round(-12.0 * math.cos(theta), 1)
+        keyframe_stops.append(
+            f"        {pct}% {{{{ transform: translate(calc(var(--orbit-rx, 205px) * {cos_val} - 50%), calc(var(--orbit-ry, 175px) * {sin_val} - 50%)) scale({scale}) rotate({tilt}deg); opacity: {opacity}; z-index: {z_idx}; pointer-events: {pt}; }}}}"
+        )
+    keyframe_css = "\n".join(keyframe_stops)
 
-    poster_groups = []
-    for group_index, (start_idx, chunk_items) in enumerate(chunks):
-        group_cards = []
-        for slot, item in enumerate(chunk_items):
-            index = (start_idx + slot) % num_movies
-            accent = str(item.get("accent_color", "#5f789c"))
-            if not re.fullmatch(r"#[0-9a-fA-F]{6}", accent):
-                accent = "#5f789c"
-            title = esc(item.get("title", "StreamGlass original"))
-            language = esc(item.get("language", "Regional"))
-            genre = esc(item.get("primary_genre", "Discovery"))
-            monogram = esc("".join(token[0] for token in re.findall(r"[A-Za-z0-9]+", str(item.get("title", "SG")))[:2]).upper())
-            group_cards.append(
-                f'<article class="hero-poster catalog-slot-{slot}" style="--poster-accent:{accent}">' 
-                f'<div class="poster-topline"><span>{language}</span><span>SG · {index + 1:02d}</span></div>'
-                f'<div class="poster-monogram">{monogram}</div>'
-                f'<div class="poster-bottomline"><div><div class="poster-title">{title}</div>'
-                f'<div class="poster-genre">{genre} · from the live catalog</div></div></div></article>'
-            )
-        # Negative delay so group 0 starts active at 0s, and successive groups enter in 1,2,3 -> 4,5,6 sequence
-        delay = 0.0 if group_index == 0 else -round(total_duration - (group_index * step_time), 2)
-        poster_groups.append(f'<div class="hero-catalog-group" style="--catalog-delay:{delay}s">{"".join(group_cards)}</div>')
-    posters = "".join(poster_groups)
-
-    album_styles = f'''<style>
-    @keyframes catalog-rot-loop {{
-        0% {{ opacity: 1; transform: translateY(0) scale(1) rotate(0deg); pointer-events: auto; }}
-        {p_hold}% {{ opacity: 1; transform: translateY(0) scale(1) rotate(0deg); pointer-events: auto; }}
-        {p_exit}% {{ opacity: 0; transform: translateY(152px) scale(0.92) rotate(3deg); pointer-events: none; }}
-        {p_pre}% {{ opacity: 0; transform: translateY(-132px) scale(0.92) rotate(-3deg); pointer-events: none; }}
-        {p_enter}% {{ opacity: 0; transform: translateY(-132px) scale(0.92) rotate(-3deg); pointer-events: none; }}
-        100% {{ opacity: 1; transform: translateY(0) scale(1) rotate(0deg); pointer-events: auto; }}
+    orbit_styles = f'''<style>
+    @keyframes movie-orbit-flow {{
+{keyframe_css}
     }}
-    .hero-poster-album .hero-catalog-group {{
-        animation: catalog-rot-loop {total_duration:.2f}s linear infinite both;
-        animation-delay: var(--catalog-delay);
-    }}
-    .hero-poster-album:hover .hero-catalog-group {{
-        animation-play-state: paused !important;
+    .hero-orbital-card {{
+        animation: movie-orbit-flow {total_orbit_duration:.1f}s linear infinite both;
     }}
     </style>'''
+
+    orbital_cards = []
+    for index, item in enumerate(hero_titles):
+        accent = str(item.get("accent_color", "#5f789c"))
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", accent):
+            accent = "#5f789c"
+        title = esc(item.get("title", "StreamGlass original"))
+        language = esc(item.get("language", "Regional"))
+        genre = esc(item.get("primary_genre", "Discovery"))
+        year = esc(item.get("release_year", "2024"))
+        monogram = esc("".join(token[0] for token in re.findall(r"[A-Za-z0-9]+", str(item.get("title", "SG")))[:2]).upper())
+        delay = -round(total_orbit_duration * (index / num_movies), 2)
+        orbital_cards.append(
+            f'<article class="hero-orbital-card" style="--poster-accent:{accent}; animation-delay:{delay}s;" title="{title} ({year}) · {language} · {genre}">'
+            f'<div class="poster-topline"><span>{language}</span><span>SG · {index + 1:02d}</span></div>'
+            f'<div class="poster-monogram">{monogram}</div>'
+            f'<div class="poster-bottomline">'
+            f'<div class="poster-title">{title}</div>'
+            f'<div class="poster-genre">{genre} · {year}</div>'
+            f'</div>'
+            f'</article>'
+        )
+    orbital_cards_html = "".join(orbital_cards)
 
     with st.container(key="landing_hero"):
         copy_col, visual_col = st.columns([1.04, .96], gap="large")
@@ -790,7 +826,6 @@ if st.session_state.current_module == "landing":
                       <div class="landing-stat"><strong>{int(hero_metrics['movie_count']):,}</strong><span>catalog titles</span></div>
                       <div class="landing-stat"><strong>{int(hero_metrics['interaction_count']):,}</strong><span>watch signals</span></div>
                     </div>
-                    <div class="hero-poster-stack hero-poster-album" aria-label="Three titles from the live StreamGlass catalog">{album_styles}{posters}</div>
                 </div>''',
                 unsafe_allow_html=True,
             )
@@ -803,6 +838,10 @@ if st.session_state.current_module == "landing":
                       <circle cx="60" cy="300" r="5"/><circle cx="250" cy="164" r="5"/><circle cx="465" cy="115" r="5"/><circle cx="55" cy="125" r="4"/><circle cx="305" cy="242" r="4"/><circle cx="475" cy="300" r="4"/>
                     </svg>
                     <div class="signal-orbit"></div>
+                    <div class="movie-orbit-stage" aria-label="Continuous floating movie catalog orbit">
+                        {orbit_styles}
+                        {orbital_cards_html}
+                    </div>
                     <div class="hero-signal-card"><span>Live recommendation signals</span><strong>Taste · language · co-watch</strong></div>
                     <div class="hero-match-badge"><span>Discovery, with context</span><strong>Made for every viewer</strong></div>
                 </div>''',
