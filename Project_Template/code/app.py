@@ -11,11 +11,89 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-sys.path.append(os.path.dirname(__file__))
+import importlib
+
+sys.path.insert(0, os.path.dirname(__file__))
 import database
+try:
+    importlib.reload(database)
+except Exception:
+    pass
 import discrete_math
 import graph_engine
 import recommender
+
+def _get_or_create_demo_subscriber(identifier: str, db_path: str = None) -> str:
+    """Finds or creates a subscriber profile matching the login identifier."""
+    if not identifier:
+        return "U101"
+    ident = str(identifier).strip()
+    try:
+        conn = database.get_connection(db_path)
+        cursor = conn.cursor()
+
+        # 1. Exact match on user_id
+        cursor.execute("SELECT user_id FROM users WHERE LOWER(user_id) = LOWER(?);", (ident,))
+        row = cursor.fetchone()
+        if row:
+            conn.close()
+            return row[0]
+
+        # 2. Match on name
+        cursor.execute("SELECT user_id FROM users WHERE LOWER(name) = LOWER(?);", (ident,))
+        row = cursor.fetchone()
+        if row:
+            conn.close()
+            return row[0]
+
+        # 3. If email like 'user@domain.com', check if name matches prefix
+        name_part = ident.split("@")[0].replace(".", " ").title()
+        cursor.execute("SELECT user_id FROM users WHERE LOWER(name) = LOWER(?);", (name_part,))
+        row = cursor.fetchone()
+        if row:
+            conn.close()
+            return row[0]
+
+        # 4. Generate next user_id
+        cursor.execute("SELECT user_id FROM users WHERE user_id LIKE 'U%';")
+        all_uids = cursor.fetchall()
+        max_num = 100
+        for (uid,) in all_uids:
+            try:
+                num = int(str(uid)[1:])
+                if num > max_num:
+                    max_num = num
+            except (ValueError, TypeError):
+                pass
+        new_user_id = f"U{max_num + 1}"
+        display_name = name_part if name_part else ident
+
+        cursor.execute("""
+        INSERT INTO users (user_id, name, age, primary_language, secondary_language, preferred_genres, persona_desc)
+        VALUES (?, ?, ?, ?, ?, ?, ?);
+        """, (
+            new_user_id,
+            display_name,
+            25,
+            "Telugu",
+            "English",
+            '["Drama", "Action"]',
+            f"Signed-in subscriber account for {display_name}."
+        ))
+        conn.commit()
+        conn.close()
+        return new_user_id
+    except Exception:
+        try:
+            users_df = database.get_all_users(db_path)
+            if not users_df.empty:
+                return users_df.iloc[0]["user_id"]
+        except Exception:
+            pass
+        return "U101"
+
+if not hasattr(database, "get_or_create_demo_subscriber"):
+    database.get_or_create_demo_subscriber = _get_or_create_demo_subscriber
 
 st.set_page_config(page_title="StreamGlass", page_icon="▷", layout="wide", initial_sidebar_state="collapsed")
 
@@ -548,7 +626,10 @@ def show_login_dialog():
         if not email.strip() or not password:
             st.warning("Enter your email or subscriber ID and password to continue.")
         else:
-            st.session_state.logged_in_user_id = database.get_or_create_demo_subscriber(email)
+            try:
+                st.session_state.logged_in_user_id = database.get_or_create_demo_subscriber(email)
+            except Exception:
+                st.session_state.logged_in_user_id = _get_or_create_demo_subscriber(email)
             st.session_state.signed_in_identifier = email.strip()
             st.session_state.selected_user_id = st.session_state.logged_in_user_id
             st.session_state.current_module = "studio"
