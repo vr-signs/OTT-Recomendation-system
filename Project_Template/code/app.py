@@ -433,6 +433,19 @@ body:has(.landing-header-marker) .st-key-landing_hero:before {{ top:clamp(180px,
 .feed-head-personal h2 {{ border-color:rgba(0,113,227,.52) !important;background:linear-gradient(135deg,rgba(0,113,227,.22),rgba(0,113,227,.08)) !important;color:var(--blue) !important;font-size:1.24rem !important;font-weight:780 !important;letter-spacing:-.035em !important;box-shadow:0 4px 18px rgba(0,113,227,.24),inset 0 1px 0 rgba(255,255,255,.45) !important;border-radius:14px !important;padding:6px 16px !important; }}
 .feed-head-personal span {{ color:var(--blue) !important;background:rgba(0,113,227,.15) !important;border:1px solid rgba(0,113,227,.3) !important; }}
 .feed-copy {{ margin:0 0 15px;color:var(--muted);font-size:.83rem;line-height:1.45; }}
+.studio-browse-rail {{ display:flex;gap:14px;overflow-x:auto;overscroll-behavior-x:contain;padding:4px 2px 17px;margin:0 -2px 27px;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:var(--line) transparent; }}
+.studio-browse-rail::-webkit-scrollbar {{ height:7px; }}
+.studio-browse-rail::-webkit-scrollbar-thumb {{ background:var(--line);border-radius:999px; }}
+.studio-browse-rail .title-card {{ flex:0 0 min(308px,78vw);margin:0;scroll-snap-align:start; }}
+.studio-genre-label {{ color:var(--muted);font-size:.76rem;font-weight:680;letter-spacing:.015em;margin:1px 0 7px; }}
+.st-key-studio_genre_filter [data-testid="stRadio"] > div {{ display:flex;flex-wrap:nowrap;gap:7px;overflow-x:auto;padding:2px 1px 10px;scrollbar-width:none; }}
+.st-key-studio_genre_filter [data-testid="stRadio"] > div::-webkit-scrollbar {{ display:none; }}
+.st-key-studio_genre_filter [data-testid="stRadio"] label {{ flex:0 0 auto !important;min-height:31px;margin:0 !important;padding:6px 11px !important;border:1px solid var(--line-soft);border-radius:999px;background:var(--surface);color:var(--ink-soft) !important;cursor:pointer;transition:background 160ms ease,border-color 160ms ease,color 160ms ease,transform 160ms ease;white-space:nowrap; }}
+.st-key-studio_genre_filter [data-testid="stRadio"] label:has(input:checked) {{ background:var(--blue-wash);border-color:rgba(0,113,227,.3);color:var(--blue) !important;box-shadow:inset 0 1px 0 var(--glass-inset); }}
+.st-key-studio_genre_filter [data-testid="stRadio"] label input {{ position:absolute;opacity:0;pointer-events:none; }}
+.st-key-studio_genre_filter [data-testid="stRadioOption"] > div {{ gap:0 !important; }}
+.st-key-studio_genre_filter [data-testid="stRadioOption"] > div > div:first-child {{ display:none !important; }}
+@media (hover:hover) and (pointer:fine) {{ .st-key-studio_genre_filter [data-testid="stRadio"] label:hover {{ transform:translateY(-1px);border-color:rgba(0,113,227,.26); }} }}
 .title-card {{ overflow:hidden;margin:0 0 11px;transition:transform 180ms ease,border-color 180ms ease,box-shadow 180ms ease; }}
 .title-card:hover {{ transform:translateY(-2px);border-color:var(--card-border-hover);box-shadow:var(--card-shadow-hover); }}
 .title-top {{ display:flex;min-height:104px; }}
@@ -726,14 +739,16 @@ def apply_chart_theme(fig,height=None):
     fig.update_xaxes(gridcolor=grid_color,zeroline=False,linecolor=line_color)
     fig.update_yaxes(gridcolor=grid_color,zeroline=False,linecolor=line_color)
     return fig
-def title_card(item,personalized=False,primary_language=None,secondary_language=None):
+def title_card_html(item,personalized=False,primary_language=None,secondary_language=None):
     accent,title,language,genre,secondary=esc(item.get("accent_color","#5f789c")),esc(item["title"]),esc(item["language"]),esc(item["primary_genre"]),esc(item.get("secondary_genre") or "")
     rating=float(item.get("avg_rating",0))
     if personalized:
         status=f'<span class="match">{int(item["confidence_pct"])}% match</span><span class="rating">{rating:.1f} / 5</span>'; reason=esc(item["why_recommended"])
     else:
         status='<span class="match">Language fit</span>' if item["language"] in {primary_language,secondary_language} else '<span class="mismatch">Language mismatch</span>'; reason=esc(item["why_recommended"])
-    st.markdown(f'''<article class="title-card"><div class="title-top"><div class="poster-swatch" style="background:{accent}"><span class="poster-id">{esc(item["movie_id"])}</span><span class="poster-year">{esc(item["release_year"])}</span></div><div class="title-detail"><div class="title-meta"><span>{language} · {genre}</span>{status}</div><div class="title-name">{title}</div><p>{secondary} · {esc(item["duration_min"])} min</p></div></div><div class="card-foot">{reason}</div></article>''',unsafe_allow_html=True)
+    return f'''<article class="title-card"><div class="title-top"><div class="poster-swatch" style="background:{accent}"><span class="poster-id">{esc(item["movie_id"])}</span><span class="poster-year">{esc(item["release_year"])}</span></div><div class="title-detail"><div class="title-meta"><span>{language} · {genre}</span>{status}</div><div class="title-name">{title}</div><p>{secondary} · {esc(item["duration_min"])} min</p></div></div><div class="card-foot">{reason}</div></article>'''
+def title_card(item,personalized=False,primary_language=None,secondary_language=None):
+    st.markdown(title_card_html(item, personalized, primary_language, secondary_language), unsafe_allow_html=True)
 def profile_surface(subscriber,history_size):
     tags="".join(f'<span class="chip">{esc(genre)}</span>' for genre in subscriber.preferred_genres)
     st.markdown(f'''<section class="profile-card"><div><div class="profile-title">{esc(subscriber.name)} <span style="color:#86868b;font-weight:500;font-size:.83rem">· {esc(subscriber.user_id)} · {subscriber.age}</span></div><div class="profile-copy">{esc(subscriber.persona_desc)}</div></div><div class="chip-row"><span class="chip chip-blue">{esc(subscriber.primary_language)}</span><span class="chip">{esc(subscriber.secondary_language or "No secondary language")}</span>{tags}<span class="chip">{history_size} watched</span></div></section>''',unsafe_allow_html=True)
@@ -994,16 +1009,26 @@ elif st.session_state.current_module == "studio":
                 except ValueError as error:
                     st.warning(str(error))
 
-        # Popular Now and For This Subscriber (below Title Section, highlighted headings)
-        baseline,personalized=st.columns(2,gap="large")
-        with baseline:
-            st.markdown('<div class="feed-head feed-head-popular"><h2>Popular Now</h2><span>STATIC BASELINE</span></div><p class="feed-copy">The same ordering is delivered to every subscriber, regardless of language or prior viewing.</p>',unsafe_allow_html=True)
-            for item in engine.get_static_popular_feed(limit=6): title_card(item,primary_language=subscriber.primary_language,secondary_language=subscriber.secondary_language)
-        with personalized:
-            st.markdown('<div class="feed-head feed-head-personal"><h2>For This Subscriber</h2><span>STREAMGLASS</span></div><p class="feed-copy">Hybrid ranking uses observed ratings, co-watch topology, language affinity, and preferred genres.</p>',unsafe_allow_html=True); recommendations=engine.get_personalized_recommendations(subscriber,limit=6)
-            if recommendations:
-                for item in recommendations: title_card(item,personalized=True)
-            else: st.info("This subscriber has no remaining unwatched titles to recommend.")
+        # Browse rails keep the existing card treatment while allowing Netflix-style catalog exploration.
+        catalog_movies = database.get_all_movies()
+        catalog_size = len(catalog_movies)
+        st.markdown('<div class="feed-head feed-head-popular"><h2>Popular Now</h2><span>STATIC BASELINE</span></div><p class="feed-copy">The same ordering is delivered to every subscriber, regardless of language or prior viewing.</p>',unsafe_allow_html=True)
+        popular_cards = "".join(title_card_html(item, primary_language=subscriber.primary_language, secondary_language=subscriber.secondary_language) for item in engine.get_static_popular_feed(limit=catalog_size))
+        st.markdown(f'<div class="studio-browse-rail" aria-label="Popular titles">{popular_cards}</div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="feed-head feed-head-personal"><h2>For This Subscriber</h2><span>STREAMGLASS</span></div><p class="feed-copy">Hybrid ranking uses observed ratings, co-watch topology, language affinity, and preferred genres.</p>',unsafe_allow_html=True)
+        genre_options = ["All genres", *sorted(catalog_movies["primary_genre"].dropna().astype(str).unique())]
+        st.markdown('<div class="studio-genre-label">Browse recommendations by genre</div>', unsafe_allow_html=True)
+        with st.container(key="studio_genre_filter"):
+            selected_genre = st.radio("Recommendation genre", genre_options, horizontal=True, label_visibility="collapsed", key="studio_recommendation_genre")
+        recommendations = engine.get_personalized_recommendations(subscriber, limit=catalog_size)
+        if selected_genre != "All genres":
+            recommendations = [item for item in recommendations if item["primary_genre"] == selected_genre]
+        if recommendations:
+            recommendation_cards = "".join(title_card_html(item, personalized=True) for item in recommendations)
+            st.markdown(f'<div class="studio-browse-rail" aria-label="Personalized recommendations">{recommendation_cards}</div>', unsafe_allow_html=True)
+        else:
+            st.info("This subscriber has no remaining unwatched titles in this genre.")
 
 elif st.session_state.current_module == "analytics":
     brandline("Analytics"); page_header("Catalog intelligence","Three views of a recommendation system’s structure.","Explore catalog partitions, centrality hubs, and the sparsity that makes hybrid recommendation valuable.")
