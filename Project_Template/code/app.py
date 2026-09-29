@@ -432,20 +432,36 @@ body:has(.landing-header-marker) .st-key-landing_hero:before {{ top:clamp(180px,
 .feed-head-popular span {{ color:#ff9500 !important;background:rgba(255,149,0,.15) !important;border:1px solid rgba(255,149,0,.3) !important; }}
 .feed-head-personal h2 {{ border-color:rgba(0,113,227,.52) !important;background:linear-gradient(135deg,rgba(0,113,227,.22),rgba(0,113,227,.08)) !important;color:var(--blue) !important;font-size:1.24rem !important;font-weight:780 !important;letter-spacing:-.035em !important;box-shadow:0 4px 18px rgba(0,113,227,.24),inset 0 1px 0 rgba(255,255,255,.45) !important;border-radius:14px !important;padding:6px 16px !important; }}
 .feed-head-personal span {{ color:var(--blue) !important;background:rgba(0,113,227,.15) !important;border:1px solid rgba(0,113,227,.3) !important; }}
+.feed-head-catalog h2 {{ border-color:rgba(36,138,61,.48) !important;background:linear-gradient(135deg,rgba(36,138,61,.19),rgba(36,138,61,.07)) !important;color:var(--green) !important;font-size:1.24rem !important;font-weight:780 !important;letter-spacing:-.035em !important;box-shadow:0 4px 18px rgba(36,138,61,.18),inset 0 1px 0 rgba(255,255,255,.45) !important;border-radius:14px !important;padding:6px 16px !important; }}
+.feed-head-catalog span {{ color:var(--green) !important;background:rgba(36,138,61,.13) !important;border:1px solid rgba(36,138,61,.28) !important; }}
 .feed-copy {{ margin:0 0 15px;color:var(--muted);font-size:.83rem;line-height:1.45; }}
 .studio-browse-rail {{ display:flex;gap:14px;overflow-x:auto;overscroll-behavior-x:contain;padding:4px 2px 17px;margin:0 -2px 27px;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:var(--line) transparent; }}
 .studio-browse-rail::-webkit-scrollbar {{ height:7px; }}
 .studio-browse-rail::-webkit-scrollbar-thumb {{ background:var(--line);border-radius:999px; }}
 .studio-browse-rail .title-card {{ flex:0 0 min(308px,78vw);margin:0;scroll-snap-align:start; }}
 .studio-genre-label {{ color:var(--muted);font-size:.76rem;font-weight:680;letter-spacing:.015em;margin:1px 0 7px; }}
-.st-key-studio_genre_filter [data-testid="stRadio"] > div {{ display:flex;flex-wrap:nowrap;gap:7px;overflow-x:auto;padding:2px 1px 10px;scrollbar-width:none; }}
-.st-key-studio_genre_filter [data-testid="stRadio"] > div::-webkit-scrollbar {{ display:none; }}
-.st-key-studio_genre_filter [data-testid="stRadio"] label {{ flex:0 0 auto !important;min-height:31px;margin:0 !important;padding:6px 11px !important;border:1px solid var(--line-soft);border-radius:999px;background:var(--surface);color:var(--ink-soft) !important;cursor:pointer;transition:background 160ms ease,border-color 160ms ease,color 160ms ease,transform 160ms ease;white-space:nowrap; }}
-.st-key-studio_genre_filter [data-testid="stRadio"] label:has(input:checked) {{ background:var(--blue-wash);border-color:rgba(0,113,227,.3);color:var(--blue) !important;box-shadow:inset 0 1px 0 var(--glass-inset); }}
-.st-key-studio_genre_filter [data-testid="stRadio"] label input {{ position:absolute;opacity:0;pointer-events:none; }}
-.st-key-studio_genre_filter [data-testid="stRadioOption"] > div {{ gap:0 !important; }}
-.st-key-studio_genre_filter [data-testid="stRadioOption"] > div > div:first-child {{ display:none !important; }}
-@media (hover:hover) and (pointer:fine) {{ .st-key-studio_genre_filter [data-testid="stRadio"] label:hover {{ transform:translateY(-1px);border-color:rgba(0,113,227,.26); }} }}
+.st-key-studio_genre_filter [data-testid="stRadio"] > div,
+.st-key-studio_browse_genre_filter [data-testid="stRadio"] > div {{ display:flex;flex-wrap:nowrap;gap:7px;overflow-x:auto;padding:2px 1px 10px;scrollbar-width:none; }}
+.st-key-studio_genre_filter [data-testid="stRadio"] > div::-webkit-scrollbar,
+.st-key-studio_browse_genre_filter [data-testid="stRadio"] > div::-webkit-scrollbar {{ display:none; }}
+.st-key-studio_genre_filter [data-testid="stRadio"] label,
+.st-key-studio_browse_genre_filter [data-testid="stRadio"] label {{ flex:0 0 auto !important;min-height:31px;margin:0 !important;padding:6px 11px !important;border:1px solid var(--line-soft);border-radius:999px;background:var(--surface);color:var(--ink-soft) !important;cursor:pointer;transition:background 160ms ease,border-color 160ms ease,color 160ms ease,transform 160ms ease;white-space:nowrap; }}
+.st-key-studio_genre_filter [data-testid="stRadio"] label:has(input:checked),
+.st-key-studio_browse_genre_filter [data-testid="stRadio"] label:has(input:checked) {{ background:var(--blue-wash);border-color:rgba(0,113,227,.3);color:var(--blue) !important;box-shadow:inset 0 1px 0 var(--glass-inset); }}
+.st-key-studio_genre_filter [data-testid="stRadio"] label input,
+.st-key-studio_browse_genre_filter [data-testid="stRadio"] label input {{ position:absolute;opacity:0;pointer-events:none; }}
+.st-key-studio_genre_filter [data-testid="stRadioOption"] > div,
+.st-key-studio_browse_genre_filter [data-testid="stRadioOption"] > div {{ gap:0 !important; }}
+.st-key-studio_genre_filter [data-testid="stRadioOption"] > div > div:first-child,
+.st-key-studio_browse_genre_filter [data-testid="stRadioOption"] > div > div:first-child {{ display:none !important; }}
+/* Streamlit's radio markup differs by runtime: restore the text wrapper when it is the first child, while leaving only the visual radio marker hidden. */
+.st-key-liquid_top_nav [data-testid="stRadioOption"] > div > div:first-child:has([data-testid="stMarkdownContainer"]),
+.st-key-liquid_top_nav [data-testid="stRadioOption"] > div > [data-testid="stMarkdownContainer"]:first-child,
+.st-key-studio_genre_filter [data-testid="stRadioOption"] > div > div:first-child:has([data-testid="stMarkdownContainer"]),
+.st-key-studio_genre_filter [data-testid="stRadioOption"] > div > [data-testid="stMarkdownContainer"]:first-child,
+.st-key-studio_browse_genre_filter [data-testid="stRadioOption"] > div > div:first-child:has([data-testid="stMarkdownContainer"]),
+.st-key-studio_browse_genre_filter [data-testid="stRadioOption"] > div > [data-testid="stMarkdownContainer"]:first-child {{ display:flex !important;visibility:visible !important;opacity:1 !important;width:auto !important;height:auto !important;overflow:visible !important; }}
+@media (hover:hover) and (pointer:fine) {{ .st-key-studio_genre_filter [data-testid="stRadio"] label:hover, .st-key-studio_browse_genre_filter [data-testid="stRadio"] label:hover {{ transform:translateY(-1px);border-color:rgba(0,113,227,.26); }} }}
 .title-card {{ overflow:hidden;margin:0 0 11px;transition:transform 180ms ease,border-color 180ms ease,box-shadow 180ms ease; }}
 .title-card:hover {{ transform:translateY(-2px);border-color:var(--card-border-hover);box-shadow:var(--card-shadow-hover); }}
 .title-top {{ display:flex;min-height:104px; }}
@@ -457,7 +473,14 @@ body:has(.landing-header-marker) .st-key-landing_hero:before {{ top:clamp(180px,
 .title-meta {{ display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:.73rem; }}
 .title-name {{ margin:5px 0 4px;color:var(--ink);font-size:1rem;line-height:1.18;letter-spacing:-.023em;font-weight:700; }}
 .title-detail p {{ color:var(--muted);margin:0;font-size:.76rem;line-height:1.36; }}
-.card-foot {{ border-top:1px solid var(--line-soft);padding:10px 13px;color:var(--muted);font-size:.74rem;line-height:1.35; }}
+.card-foot {{ border-top:1px solid var(--line-soft);padding:8px 12px;color:var(--muted);font-size:.74rem;line-height:1.35;display:flex;align-items:center;justify-content:space-between;gap:8px; }}
+.card-foot-reason {{ flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }}
+.card-pref-actions {{ display:inline-flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto; }}
+.pref-btn {{ display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;border:1px solid var(--line-soft);background:color-mix(in srgb,var(--surface) 86%,transparent);color:var(--ink-soft);font-size:.72rem;line-height:1;cursor:pointer;padding:0;transition:all 140ms ease;user-select:none;box-shadow:none; }}
+.pref-btn:hover {{ background:var(--hover-bg);border-color:var(--line);transform:translateY(-1px); }}
+.pref-btn.is-active-like {{ background:var(--blue-wash) !important;border-color:rgba(0,113,227,.42) !important;color:var(--blue) !important;box-shadow:0 1px 4px rgba(0,113,227,.18),inset 0 1px 0 var(--glass-inset) !important; }}
+.pref-btn.is-active-dislike {{ background:rgba(255,69,58,.14) !important;border-color:rgba(255,69,58,.42) !important;color:#ff453a !important;box-shadow:0 1px 4px rgba(255,69,58,.18),inset 0 1px 0 var(--glass-inset) !important; }}
+.st-key-streamglass_pref_sync {{ position:fixed !important;top:-1000px !important;left:-1000px !important;width:1px !important;height:1px !important;opacity:0 !important;pointer-events:none !important;overflow:hidden !important;margin:0 !important;padding:0 !important; }}
 .match {{ color:var(--blue);font-weight:720; }}
 .mismatch {{ color:var(--red);font-weight:700; }}
 .rating {{ color:var(--orange);font-weight:720; }}
@@ -739,16 +762,29 @@ def apply_chart_theme(fig,height=None):
     fig.update_xaxes(gridcolor=grid_color,zeroline=False,linecolor=line_color)
     fig.update_yaxes(gridcolor=grid_color,zeroline=False,linecolor=line_color)
     return fig
-def title_card_html(item,personalized=False,primary_language=None,secondary_language=None):
+def title_card_html(item,personalized=False,primary_language=None,secondary_language=None,user_prefs=None):
+    movie_id = item["movie_id"]
     accent,title,language,genre,secondary=esc(item.get("accent_color","#5f789c")),esc(item["title"]),esc(item["language"]),esc(item["primary_genre"]),esc(item.get("secondary_genre") or "")
     rating=float(item.get("avg_rating",0))
     if personalized:
-        status=f'<span class="match">{int(item["confidence_pct"])}% match</span><span class="rating">{rating:.1f} / 5</span>'; reason=esc(item["why_recommended"])
+        status=f'<span class="match">{int(item["confidence_pct"])}% match</span><span class="rating">{rating:.1f} / 5</span>'
+        reason=esc(item.get("why_recommended") or "Hybrid recommendation")
     else:
-        status='<span class="match">Language fit</span>' if item["language"] in {primary_language,secondary_language} else '<span class="mismatch">Language mismatch</span>'; reason=esc(item["why_recommended"])
-    return f'''<article class="title-card"><div class="title-top"><div class="poster-swatch" style="background:{accent}"><span class="poster-id">{esc(item["movie_id"])}</span><span class="poster-year">{esc(item["release_year"])}</span></div><div class="title-detail"><div class="title-meta"><span>{language} · {genre}</span>{status}</div><div class="title-name">{title}</div><p>{secondary} · {esc(item["duration_min"])} min</p></div></div><div class="card-foot">{reason}</div></article>'''
-def title_card(item,personalized=False,primary_language=None,secondary_language=None):
-    st.markdown(title_card_html(item, personalized, primary_language, secondary_language), unsafe_allow_html=True)
+        status='<span class="match">Language fit</span>' if item["language"] in {primary_language,secondary_language} else '<span class="mismatch">Language mismatch</span>'
+        reason=esc(item.get("why_recommended") or f"Global Popularity Score: {item.get('popularity_score', 50):.1f}/100")
+
+    current_pref = (user_prefs or {}).get(movie_id)
+    like_cls = " is-active-like" if current_pref == "like" else ""
+    dislike_cls = " is-active-dislike" if current_pref == "dislike" else ""
+
+    like_js = f"(function(){{var inp=document.querySelector('.st-key-streamglass_pref_sync input');if(inp){{var s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;s.call(inp,'{movie_id}::like::'+Date.now());inp.dispatchEvent(new Event('input',{{bubbles:true}}));}}else{{window.location.search='?pref_movie={movie_id}&pref_action=like';}} }})()"
+    dislike_js = f"(function(){{var inp=document.querySelector('.st-key-streamglass_pref_sync input');if(inp){{var s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;s.call(inp,'{movie_id}::dislike::'+Date.now());inp.dispatchEvent(new Event('input',{{bubbles:true}}));}}else{{window.location.search='?pref_movie={movie_id}&pref_action=dislike';}} }})()"
+
+    pref_html = f'''<div class="card-pref-actions" aria-label="Feedback for {title}"><button type="button" class="pref-btn pref-like{like_cls}" title="Like" onclick="{like_js}">👍</button><button type="button" class="pref-btn pref-dislike{dislike_cls}" title="Dislike" onclick="{dislike_js}">👎</button></div>'''
+
+    return f'''<article class="title-card" id="card-{movie_id}"><div class="title-top"><div class="poster-swatch" style="background:{accent}"><span class="poster-id">{esc(movie_id)}</span><span class="poster-year">{esc(item["release_year"])}</span></div><div class="title-detail"><div class="title-meta"><span>{language} · {genre}</span>{status}</div><div class="title-name">{title}</div><p>{secondary} · {esc(item["duration_min"])} min</p></div></div><div class="card-foot"><span class="card-foot-reason">{reason}</span>{pref_html}</div></article>'''
+def title_card(item,personalized=False,primary_language=None,secondary_language=None,user_prefs=None):
+    st.markdown(title_card_html(item, personalized, primary_language, secondary_language, user_prefs), unsafe_allow_html=True)
 def profile_surface(subscriber,history_size):
     tags="".join(f'<span class="chip">{esc(genre)}</span>' for genre in subscriber.preferred_genres)
     st.markdown(f'''<section class="profile-card"><div><div class="profile-title">{esc(subscriber.name)} <span style="color:#86868b;font-weight:500;font-size:.83rem">· {esc(subscriber.user_id)} · {subscriber.age}</span></div><div class="profile-copy">{esc(subscriber.persona_desc)}</div></div><div class="chip-row"><span class="chip chip-blue">{esc(subscriber.primary_language)}</span><span class="chip">{esc(subscriber.secondary_language or "No secondary language")}</span>{tags}<span class="chip">{history_size} watched</span></div></section>''',unsafe_allow_html=True)
@@ -1009,12 +1045,52 @@ elif st.session_state.current_module == "studio":
                 except ValueError as error:
                     st.warning(str(error))
 
+        # Preference feedback sync receiver
+        with st.container(key="streamglass_pref_sync"):
+            pref_signal = st.text_input("pref_signal", value="", key="streamglass_pref_event", label_visibility="collapsed")
+        if pref_signal and "::" in pref_signal:
+            parts = pref_signal.split("::")
+            if len(parts) >= 2:
+                m_target, a_target = parts[0], parts[1]
+                database.set_user_movie_preference(subscriber.user_id, m_target, a_target)
+                engine.refresh()
+                st.rerun()
+
+        # Fallback query parameter handler for preference actions
+        if "pref_action" in st.query_params and "pref_movie" in st.query_params:
+            p_action = st.query_params.get("pref_action")
+            p_movie = st.query_params.get("pref_movie")
+            database.set_user_movie_preference(subscriber.user_id, p_movie, p_action)
+            del st.query_params["pref_action"]
+            del st.query_params["pref_movie"]
+            engine.refresh()
+            st.rerun()
+
+        # Load live subscriber preferences from database
+        subscriber.load_preferences(database.get_user_movie_preferences(subscriber.user_id))
+
         # Browse rails keep the existing card treatment while allowing Netflix-style catalog exploration.
         catalog_movies = database.get_all_movies()
         catalog_size = len(catalog_movies)
         st.markdown('<div class="feed-head feed-head-popular"><h2>Popular Now</h2><span>STATIC BASELINE</span></div><p class="feed-copy">The same ordering is delivered to every subscriber, regardless of language or prior viewing.</p>',unsafe_allow_html=True)
-        popular_cards = "".join(title_card_html(item, primary_language=subscriber.primary_language, secondary_language=subscriber.secondary_language) for item in engine.get_static_popular_feed(limit=catalog_size))
+        popular_cards = "".join(title_card_html(item, primary_language=subscriber.primary_language, secondary_language=subscriber.secondary_language, user_prefs=subscriber.preferences) for item in engine.get_static_popular_feed(limit=catalog_size))
         st.markdown(f'<div class="studio-browse-rail" aria-label="Popular titles">{popular_cards}</div>', unsafe_allow_html=True)
+
+        # Browse All Movies: complete catalog with exact matching album cards and dynamic genre filters
+        st.markdown('<div class="feed-head feed-head-catalog"><h2>Browse All Movies</h2><span>CATALOG</span></div><p class="feed-copy">Explore the complete catalog across all genres, languages, and release years.</p>',unsafe_allow_html=True)
+        catalog_genre_options = ["All genres", *sorted(catalog_movies["primary_genre"].dropna().astype(str).unique())]
+        st.markdown('<div class="studio-genre-label">Browse catalog by genre</div>', unsafe_allow_html=True)
+        with st.container(key="studio_browse_genre_filter"):
+            selected_browse_genre = st.radio("Catalog genre", catalog_genre_options, horizontal=True, label_visibility="collapsed", key="studio_browse_catalog_genre")
+
+        browse_items = catalog_movies.to_dict(orient="records")
+        if selected_browse_genre != "All genres":
+            browse_items = [m for m in browse_items if m["primary_genre"] == selected_browse_genre]
+        if browse_items:
+            browse_cards = "".join(title_card_html(item, primary_language=subscriber.primary_language, secondary_language=subscriber.secondary_language, user_prefs=subscriber.preferences) for item in browse_items)
+            st.markdown(f'<div class="studio-browse-rail" aria-label="Browse all movies">{browse_cards}</div>', unsafe_allow_html=True)
+        else:
+            st.info("No titles available in this genre.")
 
         st.markdown('<div class="feed-head feed-head-personal"><h2>For This Subscriber</h2><span>STREAMGLASS</span></div><p class="feed-copy">Hybrid ranking uses observed ratings, co-watch topology, language affinity, and preferred genres.</p>',unsafe_allow_html=True)
         genre_options = ["All genres", *sorted(catalog_movies["primary_genre"].dropna().astype(str).unique())]
@@ -1025,7 +1101,7 @@ elif st.session_state.current_module == "studio":
         if selected_genre != "All genres":
             recommendations = [item for item in recommendations if item["primary_genre"] == selected_genre]
         if recommendations:
-            recommendation_cards = "".join(title_card_html(item, personalized=True) for item in recommendations)
+            recommendation_cards = "".join(title_card_html(item, personalized=True, user_prefs=subscriber.preferences) for item in recommendations)
             st.markdown(f'<div class="studio-browse-rail" aria-label="Personalized recommendations">{recommendation_cards}</div>', unsafe_allow_html=True)
         else:
             st.info("This subscriber has no remaining unwatched titles in this genre.")
