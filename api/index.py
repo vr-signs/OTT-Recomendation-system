@@ -185,6 +185,7 @@ def personalized_feed(
     subscriber = rec_module.Subscriber.from_dict(user_dict)
     history = database.get_user_watch_history(user_id)
     subscriber.load_history(history.to_dict(orient="records"))
+    subscriber.load_preferences(database.get_user_movie_preferences(user_id))
 
     recs = engine.get_personalized_recommendations(subscriber, limit=limit)
     return {"user_id": user_id, "recommendations": recs}
@@ -246,6 +247,26 @@ def record_interaction(body: InteractionRequest):
     get_engine().refresh()
 
     return {"history_id": history_id, "status": "committed"}
+
+
+class PreferencePayload(BaseModel):
+    movie_id: str
+    preference: str  # "like" or "dislike"
+
+
+@app.get("/api/users/{user_id}/preferences")
+def get_preferences(user_id: str):
+    """Retrieves like/dislike preferences for a subscriber."""
+    prefs = database.get_user_movie_preferences(user_id)
+    return {"user_id": user_id, "preferences": prefs}
+
+
+@app.post("/api/users/{user_id}/preferences")
+def post_preference(user_id: str, body: PreferencePayload):
+    """Sets or toggles like/dislike preference for a subscriber."""
+    new_state = database.set_user_movie_preference(user_id, body.movie_id, body.preference)
+    get_engine().refresh()
+    return {"user_id": user_id, "movie_id": body.movie_id, "preference": new_state}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -480,8 +480,13 @@ input[type='range'].sg-slider {
 .title-meta { font-size: 0.70rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
 .title-name { font-size: 0.95rem; font-weight: 700; }
 .title-detail p { font-size: 0.78rem; color: var(--muted); margin: 0; }
-.title-status { font-size: 0.60rem; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: rgba(0,113,227,0.12); color: var(--blue); }
-.card-foot { padding: 8px 16px; border-top: 1px solid var(--line-soft); font-size: 0.75rem; color: var(--muted); background: var(--hover-bg); }
+.card-foot { padding: 8px 16px; border-top: 1px solid var(--line-soft); font-size: 0.75rem; color: var(--muted); background: var(--hover-bg); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.card-foot-reason { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-pref-actions { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.pref-btn { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--line-soft); background: var(--surface); color: var(--ink-soft); font-size: 0.72rem; cursor: pointer; padding: 0; transition: all 140ms ease; user-select: none; }
+.pref-btn:hover { background: var(--hover-bg); border-color: var(--line); transform: translateY(-1px); }
+.pref-btn.is-active-like { background: var(--blue-wash) !important; border-color: rgba(0,113,227,0.4) !important; color: var(--blue) !important; box-shadow: 0 1px 4px rgba(0,113,227,0.18); }
+.pref-btn.is-active-dislike { background: rgba(255,69,58,0.14) !important; border-color: rgba(255,69,58,0.4) !important; color: #ff453a !important; box-shadow: 0 1px 4px rgba(255,69,58,0.18); }
 
 /* ── Expander (Studio interaction form) ──────────────────────────────────── */
 .expander {

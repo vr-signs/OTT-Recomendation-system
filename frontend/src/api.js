@@ -49,6 +49,10 @@ export const api = {
       rating,
     }),
 
+  userPreferences: (userId) => get(`/api/users/${userId}/preferences`),
+  setUserPreference: (userId, movieId, preference) =>
+    post(`/api/users/${userId}/preferences`, { movie_id: movieId, preference }),
+
   modelSimilarity: (movieA, movieB) =>
     get(`/api/model/similarity?movie_a=${movieA}&movie_b=${movieB}`),
   modelNetwork: () => get('/api/model/network'),

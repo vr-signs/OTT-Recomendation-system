@@ -7,7 +7,7 @@ function accent(movieId) {
   return ACCENT_PALETTE[n % ACCENT_PALETTE.length]
 }
 
-export default function TitleCard({ item, personalized = false, primaryLanguage, secondaryLanguage }) {
+export default function TitleCard({ item, personalized = false, primaryLanguage, secondaryLanguage, preference, onLike, onDislike }) {
   const color = item.accent_color || accent(item.movie_id)
   const isMatch = item.language === primaryLanguage
   const isSecondary = !isMatch && item.language === secondaryLanguage
@@ -34,9 +34,29 @@ export default function TitleCard({ item, personalized = false, primaryLanguage,
         </div>
       </div>
       <div className="card-foot">
-        {personalized
-          ? (item.why_recommended || 'Hybrid recommendation')
-          : (item.why_recommended || `Popularity ${item.popularity_score}`)}
+        <span className="card-foot-reason">
+          {personalized
+            ? (item.why_recommended || 'Hybrid recommendation')
+            : (item.why_recommended || `Global Popularity Score: ${item.popularity_score}/100`)}
+        </span>
+        <div className="card-pref-actions" aria-label={`Feedback for ${item.title}`}>
+          <button
+            type="button"
+            className={`pref-btn pref-like ${preference === 'like' ? 'is-active-like' : ''}`}
+            title="Like"
+            onClick={(e) => { e.stopPropagation(); onLike && onLike(item.movie_id); }}
+          >
+            👍
+          </button>
+          <button
+            type="button"
+            className={`pref-btn pref-dislike ${preference === 'dislike' ? 'is-active-dislike' : ''}`}
+            title="Dislike"
+            onClick={(e) => { e.stopPropagation(); onDislike && onDislike(item.movie_id); }}
+          >
+            👎
+          </button>
+        </div>
       </div>
     </article>
   )

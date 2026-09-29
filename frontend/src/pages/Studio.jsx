@@ -8,6 +8,9 @@ export default function Studio() {
   const [profileData, setProfileData] = useState(null)
   const [popularRecs, setPopularRecs] = useState([])
   const [personalizedRecs, setPersonalizedRecs] = useState([])
+  const [allMovies, setAllMovies] = useState([])
+  const [selectedBrowseGenre, setSelectedBrowseGenre] = useState('All genres')
+  const [preferences, setPreferences] = useState({})
   const [loading, setLoading] = useState(false)
   const [isExpanderOpen, setIsExpanderOpen] = useState(false)
 
@@ -18,7 +21,7 @@ export default function Studio() {
   const [formSubmitting, setFormSubmitting] = useState(false)
   const [feedback, setFeedback] = useState(null)
 
-  // Fetch initial users list and popular feed
+  // Fetch initial users list, popular feed, and all movies
   useEffect(() => {
     api
       .dbUsers()
@@ -28,19 +31,29 @@ export default function Studio() {
       .catch(console.error)
 
     api
-      .popularFeed(6)
+      .popularFeed(10)
       .then((res) => setPopularRecs(res.feed || []))
+      .catch(console.error)
+
+    api
+      .dbMovies()
+      .then((res) => setAllMovies(res.rows || []))
       .catch(console.error)
   }, [])
 
-  // Load subscriber profile and personalized recommendations
+  // Load subscriber profile, preferences, and personalized recommendations
   const loadUserData = useCallback((uid) => {
     if (!uid) return
     setLoading(true)
-    Promise.all([api.userProfile(uid), api.personalizedFeed(uid, 5, 0.6, 6)])
-      .then(([prof, recs]) => {
+    Promise.all([
+      api.userProfile(uid),
+      api.personalizedFeed(uid, 5, 0.6, 10),
+      api.userPreferences ? api.userPreferences(uid).catch(() => ({ preferences: {} })) : Promise.resolve({ preferences: {} })
+    ])
+      .then(([prof, recs, prefRes]) => {
         setProfileData(prof)
         setPersonalizedRecs(recs.recommendations || [])
+        setPreferences(prefRes.preferences || {})
         if (prof.unwatched && prof.unwatched.length > 0) {
           setTargetMovie(prof.unwatched[0].movie_id)
         } else {
@@ -50,6 +63,26 @@ export default function Studio() {
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
+
+  const handleTogglePreference = async (movieId, action) => {
+    try {
+      const res = await api.setUserPreference(selectedUserId, movieId, action)
+      setPreferences((prev) => {
+        const next = { ...prev }
+        if (!res.preference) {
+          delete next[movieId]
+        } else {
+          next[movieId] = res.preference
+        }
+        return next
+      })
+      // Reload recommendations to reflect new preference signals
+      const recs = await api.personalizedFeed(selectedUserId, 5, 0.6, 10)
+      setPersonalizedRecs(recs.recommendations || [])
+    } catch (err) {
+      console.error('Failed to set preference:', err)
+    }
+  }
 
   useEffect(() => {
     loadUserData(selectedUserId)
@@ -77,6 +110,18 @@ export default function Studio() {
   }
 
   const subscriber = profileData?.profile
+
+  const genres = ['All genres', ...Array.from(new Set(allMovies.flatMap((m) => {
+    if (!m.genres) return []
+    return Array.isArray(m.genres) ? m.genres : m.genres.split(',').map((g) => g.trim())
+  }))).sort()]
+
+  const filteredBrowseMovies = selectedBrowseGenre === 'All genres'
+    ? allMovies
+    : allMovies.filter((m) => {
+        const glist = Array.isArray(m.genres) ? m.genres : (m.genres ? m.genres.split(',').map(g => g.trim()) : [])
+        return glist.includes(selectedBrowseGenre)
+      })
 
   return (
     <div className="studio-page">
@@ -163,6 +208,9 @@ export default function Studio() {
                 personalized={false}
                 primaryLanguage={subscriber?.primary_language}
                 secondaryLanguage={subscriber?.secondary_language}
+                preference={preferences[item.movie_id]}
+                onLike={(id) => handleTogglePreference(id, 'like')}
+                onDislike={(id) => handleTogglePreference(id, 'dislike')}
               />
             ))}
           </div>
@@ -183,7 +231,14 @@ export default function Studio() {
           ) : personalizedRecs.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {personalizedRecs.map((item) => (
-                <TitleCard key={item.movie_id} item={item} personalized={true} />
+                <TitleCard
+                  key={item.movie_id}
+                  item={item}
+                  personalized={true}
+                  preference={preferences[item.movie_id]}
+                  onLike={(id) => handleTogglePreference(id, 'like')}
+                  onDislike={(id) => handleTogglePreference(id, 'dislike')}
+                />
               ))}
             </div>
           ) : (
@@ -193,6 +248,54 @@ export default function Studio() {
           )}
         </section>
       </div>
+
+      {/* Browse All Movies Section */}
+      <section style={{ marginBottom: '32px' }}>
+        <div className="feed-head" style={{ marginBottom: '8px' }}>
+          <h2>Browse all movies</h2>
+          <span>CATALOG</span>
+        </div>
+        <p className="feed-copy">
+          Complete platform catalog with dynamic genre filtering.
+        </p>
+
+        {/* Genre filter pills */}
+        <div className="chip-row" style={{ marginBottom: '16px', gap: '8px' }}>
+          {genres.map((g) => (
+            <button
+              key={g}
+              type="button"
+              className={`chip ${selectedBrowseGenre === g ? 'chip-blue' : ''}`}
+              style={{
+                cursor: 'pointer',
+                border: 'none',
+                fontWeight: selectedBrowseGenre === g ? 600 : 500
+              }}
+              onClick={() => setSelectedBrowseGenre(g)}
+            >
+              {g}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '10px' }}>
+          {filteredBrowseMovies.map((movie) => (
+            <TitleCard
+              key={movie.movie_id}
+              item={{
+                ...movie,
+                why_recommended: `Catalog Title · ${movie.language}`
+              }}
+              personalized={false}
+              primaryLanguage={subscriber?.primary_language}
+              secondaryLanguage={subscriber?.secondary_language}
+              preference={preferences[movie.movie_id]}
+              onLike={(id) => handleTogglePreference(id, 'like')}
+              onDislike={(id) => handleTogglePreference(id, 'dislike')}
+            />
+          ))}
+        </div>
+      </section>
 
       {/* Interaction Recording Form */}
       <div className="section-heading">

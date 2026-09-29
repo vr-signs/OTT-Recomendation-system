@@ -101,6 +101,7 @@ class Subscriber:
         self.preferred_genres = preferred_genres
         self.persona_desc = persona_desc
         self.watch_history: List[Dict[str, Any]] = []
+        self.preferences: Dict[str, str] = {}
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Subscriber":
@@ -118,6 +119,9 @@ class Subscriber:
 
     def load_history(self, history_records: List[Dict[str, Any]]) -> None:
         self.watch_history = history_records
+
+    def load_preferences(self, preferences: Dict[str, str]) -> None:
+        self.preferences = preferences or {}
 
     def get_watched_movie_ids(self) -> List[str]:
         return [record["movie_id"] for record in self.watch_history]
@@ -316,11 +320,19 @@ class HybridScoringEngine:
     def get_personalized_recommendations(self, subscriber: Subscriber, limit: int = 8) -> List[Dict[str, Any]]:
         """
         Produces the personalized StreamGlass AI feed:
-        Evaluates k-NN score, graph centrality, linguistic affinity, and cold-start mitigations.
+        Evaluates k-NN score, graph centrality, linguistic affinity, like/dislike preferences, and cold-start mitigations.
         """
         watched_records = subscriber.watch_history
         watched_dict = {rec["movie_id"]: float(rec["rating"]) for rec in watched_records}
         watched_ids = set(watched_dict.keys())
+
+        user_prefs = getattr(subscriber, "preferences", {}) or {}
+        liked_movie_ids = {mid for mid, pref in user_prefs.items() if pref == "like"}
+        disliked_movie_ids = {mid for mid, pref in user_prefs.items() if pref == "dislike"}
+
+        liked_genres = {m.primary_genre for m in self.all_movies if m.movie_id in liked_movie_ids}
+        disliked_genres = {m.primary_genre for m in self.all_movies if m.movie_id in disliked_movie_ids}
+        liked_languages = {m.language for m in self.all_movies if m.movie_id in liked_movie_ids}
 
         centralities = self.graph.calculate_degree_centrality()
         max_cent = max(centralities.values()) if centralities and max(centralities.values()) > 0 else 1.0
@@ -359,12 +371,33 @@ class HybridScoringEngine:
             if movie.primary_genre in subscriber.preferred_genres:
                 genre_boost = 1.20
 
+            # Like / Dislike Preference Signals
+            pref_boost = 1.0
+            if m_id in liked_movie_ids:
+                pref_boost *= 1.35
+            elif m_id in disliked_movie_ids:
+                pref_boost *= 0.15
+
+            if movie.primary_genre in liked_genres:
+                pref_boost *= 1.20
+            elif movie.primary_genre in disliked_genres:
+                pref_boost *= 0.75
+
+            if movie.language in liked_languages and movie.language != subscriber.primary_language:
+                pref_boost *= 1.12
+
             # Master Blended Score
-            hybrid_score = (self.alpha * norm_knn + (1.0 - self.alpha) * norm_cent) * lang_boost * genre_boost
+            hybrid_score = (self.alpha * norm_knn + (1.0 - self.alpha) * norm_cent) * lang_boost * genre_boost * pref_boost
             confidence_pct = min(99, int(round(hybrid_score * 85, 0)))
 
             # Transparent reason chips
             reasons = []
+            if m_id in liked_movie_ids:
+                reasons.append("Liked by You")
+            elif movie.primary_genre in liked_genres:
+                reasons.append(f"Liked Genre Affinity ({movie.primary_genre})")
+            elif m_id in disliked_movie_ids:
+                reasons.append("Disliked Title")
             if knn_raw > 0:
                 reasons.append(f"Predicted Rating: {knn_raw:.1f}★ (k-NN)")
             if norm_cent > 0.4:
@@ -391,28 +424,57 @@ class HybridScoringEngine:
     def _get_cold_start_recommendations(self, subscriber: Subscriber, limit: int = 8) -> List[Dict[str, Any]]:
         """
         Cold Start Mitigation via DMGT Equivalence Partitions:
-        Guarantees diverse regional discovery across quotient classes.
+        Guarantees diverse regional discovery across quotient classes while incorporating subscriber preferences.
         """
         all_dicts = [m.to_dict() for m in self.all_movies]
         quotient = compute_equivalence_classes(all_dicts)
         stratified = get_stratified_catalog_distribution(quotient, top_n_per_class=1)
 
-        # Sort stratified items prioritizing subscriber's stated linguistic preference
+        user_prefs = getattr(subscriber, "preferences", {}) or {}
+        liked_movie_ids = {mid for mid, pref in user_prefs.items() if pref == "like"}
+        disliked_movie_ids = {mid for mid, pref in user_prefs.items() if pref == "dislike"}
+        liked_genres = {m["primary_genre"] for m in all_dicts if m["movie_id"] in liked_movie_ids}
+        disliked_genres = {m["primary_genre"] for m in all_dicts if m["movie_id"] in disliked_movie_ids}
+
+        # Sort stratified items prioritizing subscriber's stated linguistic preference and likes
         def cold_start_key(m):
             priority = 0
+            if m["movie_id"] in liked_movie_ids:
+                priority += 120
+            elif m["movie_id"] in disliked_movie_ids:
+                priority -= 120
             if m["language"] == subscriber.primary_language:
                 priority += 50
             if m["primary_genre"] in subscriber.preferred_genres:
                 priority += 30
+            if m["primary_genre"] in liked_genres:
+                priority += 25
+            elif m["primary_genre"] in disliked_genres:
+                priority -= 25
             return (priority, m["avg_rating"], m["popularity_score"])
 
         stratified.sort(key=cold_start_key, reverse=True)
 
         results = []
         for item in stratified[:limit]:
-            item["hybrid_score"] = round(item["avg_rating"] / 5.0, 3)
-            item["confidence_pct"] = int(item["avg_rating"] * 18)
-            item["why_recommended"] = f"DMGT Partition Top Pick [{item['language']} :: {item['primary_genre']}]"
+            score_mult = 1.0
+            if item["movie_id"] in liked_movie_ids:
+                score_mult = 1.25
+            elif item["movie_id"] in disliked_movie_ids:
+                score_mult = 0.25
+            elif item["primary_genre"] in liked_genres:
+                score_mult = 1.15
+            elif item["primary_genre"] in disliked_genres:
+                score_mult = 0.85
+
+            item["hybrid_score"] = round(min(1.0, (item["avg_rating"] / 5.0) * score_mult), 3)
+            item["confidence_pct"] = min(99, int(item["avg_rating"] * 18 * score_mult))
+            reason = f"DMGT Partition Top Pick [{item['language']} :: {item['primary_genre']}]"
+            if item["movie_id"] in liked_movie_ids:
+                reason += " • Liked by You"
+            elif item["primary_genre"] in liked_genres:
+                reason += f" • Liked Genre Affinity ({item['primary_genre']})"
+            item["why_recommended"] = reason
             results.append(item)
         return results
 

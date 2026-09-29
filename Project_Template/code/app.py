@@ -7,6 +7,7 @@ import math
 import re
 import base64
 import sqlite3
+from urllib.parse import quote
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -476,7 +477,7 @@ body:has(.landing-header-marker) .st-key-landing_hero:before {{ top:clamp(180px,
 .card-foot {{ border-top:1px solid var(--line-soft);padding:8px 12px;color:var(--muted);font-size:.74rem;line-height:1.35;display:flex;align-items:center;justify-content:space-between;gap:8px; }}
 .card-foot-reason {{ flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }}
 .card-pref-actions {{ display:inline-flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto; }}
-.pref-btn {{ display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;border:1px solid var(--line-soft);background:color-mix(in srgb,var(--surface) 86%,transparent);color:var(--ink-soft);font-size:.72rem;line-height:1;cursor:pointer;padding:0;transition:all 140ms ease;user-select:none;box-shadow:none; }}
+.pref-btn {{ display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;border:1px solid var(--line-soft);background:color-mix(in srgb,var(--surface) 86%,transparent);color:var(--ink-soft);font-size:.72rem;line-height:1;cursor:pointer;padding:0;transition:all 140ms ease;user-select:none;box-shadow:none;text-decoration:none; }}
 .pref-btn:hover {{ background:var(--hover-bg);border-color:var(--line);transform:translateY(-1px); }}
 .pref-btn.is-active-like {{ background:var(--blue-wash) !important;border-color:rgba(0,113,227,.42) !important;color:var(--blue) !important;box-shadow:0 1px 4px rgba(0,113,227,.18),inset 0 1px 0 var(--glass-inset) !important; }}
 .pref-btn.is-active-dislike {{ background:rgba(255,69,58,.14) !important;border-color:rgba(255,69,58,.42) !important;color:#ff453a !important;box-shadow:0 1px 4px rgba(255,69,58,.18),inset 0 1px 0 var(--glass-inset) !important; }}
@@ -637,6 +638,27 @@ if "signed_in_identifier" not in st.session_state:
     st.session_state.signed_in_identifier = None
 engine.set_hyperparameters(st.session_state.k_neighbors, st.session_state.alpha_weight)
 
+# Feedback controls are rendered inside the movie-card HTML, so their local
+# route also carries the already active demo subscriber.  A full page request
+# opens a new Streamlit session; restoring that subscriber here keeps the
+# existing feedback action scoped to the same Studio profile.
+feedback_movie = st.query_params.get("pref_movie")
+feedback_action = st.query_params.get("pref_action")
+feedback_user = st.query_params.get("pref_user")
+if feedback_movie and feedback_action in {"like", "dislike"} and feedback_user:
+    known_users = database.get_all_users()
+    if feedback_user in set(known_users["user_id"].astype(str)):
+        database.set_user_movie_preference(str(feedback_user), str(feedback_movie), str(feedback_action))
+        engine.refresh()
+        st.session_state.logged_in_user_id = str(feedback_user)
+        st.session_state.selected_user_id = str(feedback_user)
+        st.session_state.current_module = "studio"
+        st.session_state.streamglass_main_nav = "Studio"
+    for feedback_key in ("pref_movie", "pref_action", "pref_user"):
+        if feedback_key in st.query_params:
+            del st.query_params[feedback_key]
+    st.rerun()
+
 is_landing = st.session_state.current_module == "landing"
 if is_landing:
     st.session_state.streamglass_main_nav = None
@@ -762,7 +784,7 @@ def apply_chart_theme(fig,height=None):
     fig.update_xaxes(gridcolor=grid_color,zeroline=False,linecolor=line_color)
     fig.update_yaxes(gridcolor=grid_color,zeroline=False,linecolor=line_color)
     return fig
-def title_card_html(item,personalized=False,primary_language=None,secondary_language=None,user_prefs=None):
+def title_card_html(item,personalized=False,primary_language=None,secondary_language=None,user_prefs=None,feedback_user_id=None):
     movie_id = item["movie_id"]
     accent,title,language,genre,secondary=esc(item.get("accent_color","#5f789c")),esc(item["title"]),esc(item["language"]),esc(item["primary_genre"]),esc(item.get("secondary_genre") or "")
     rating=float(item.get("avg_rating",0))
@@ -777,14 +799,13 @@ def title_card_html(item,personalized=False,primary_language=None,secondary_lang
     like_cls = " is-active-like" if current_pref == "like" else ""
     dislike_cls = " is-active-dislike" if current_pref == "dislike" else ""
 
-    like_js = f"(function(){{var inp=document.querySelector('.st-key-streamglass_pref_sync input');if(inp){{var s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;s.call(inp,'{movie_id}::like::'+Date.now());inp.dispatchEvent(new Event('input',{{bubbles:true}}));}}else{{window.location.search='?pref_movie={movie_id}&pref_action=like';}} }})()"
-    dislike_js = f"(function(){{var inp=document.querySelector('.st-key-streamglass_pref_sync input');if(inp){{var s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;s.call(inp,'{movie_id}::dislike::'+Date.now());inp.dispatchEvent(new Event('input',{{bubbles:true}}));}}else{{window.location.search='?pref_movie={movie_id}&pref_action=dislike';}} }})()"
-
-    pref_html = f'''<div class="card-pref-actions" aria-label="Feedback for {title}"><button type="button" class="pref-btn pref-like{like_cls}" title="Like" onclick="{like_js}">👍</button><button type="button" class="pref-btn pref-dislike{dislike_cls}" title="Dislike" onclick="{dislike_js}">👎</button></div>'''
+    feedback_user_query = quote(str(feedback_user_id or ""), safe="")
+    feedback_movie_query = quote(str(movie_id), safe="")
+    pref_html = f'''<div class="card-pref-actions" aria-label="Feedback for {title}"><a class="pref-btn pref-like{like_cls}" title="Like" aria-label="Like {title}" href="?pref_movie={feedback_movie_query}&amp;pref_action=like&amp;pref_user={feedback_user_query}">👍</a><a class="pref-btn pref-dislike{dislike_cls}" title="Dislike" aria-label="Dislike {title}" href="?pref_movie={feedback_movie_query}&amp;pref_action=dislike&amp;pref_user={feedback_user_query}">👎</a></div>'''
 
     return f'''<article class="title-card" id="card-{movie_id}"><div class="title-top"><div class="poster-swatch" style="background:{accent}"><span class="poster-id">{esc(movie_id)}</span><span class="poster-year">{esc(item["release_year"])}</span></div><div class="title-detail"><div class="title-meta"><span>{language} · {genre}</span>{status}</div><div class="title-name">{title}</div><p>{secondary} · {esc(item["duration_min"])} min</p></div></div><div class="card-foot"><span class="card-foot-reason">{reason}</span>{pref_html}</div></article>'''
-def title_card(item,personalized=False,primary_language=None,secondary_language=None,user_prefs=None):
-    st.markdown(title_card_html(item, personalized, primary_language, secondary_language, user_prefs), unsafe_allow_html=True)
+def title_card(item,personalized=False,primary_language=None,secondary_language=None,user_prefs=None,feedback_user_id=None):
+    st.markdown(title_card_html(item, personalized, primary_language, secondary_language, user_prefs, feedback_user_id), unsafe_allow_html=True)
 def profile_surface(subscriber,history_size):
     tags="".join(f'<span class="chip">{esc(genre)}</span>' for genre in subscriber.preferred_genres)
     st.markdown(f'''<section class="profile-card"><div><div class="profile-title">{esc(subscriber.name)} <span style="color:#86868b;font-weight:500;font-size:.83rem">· {esc(subscriber.user_id)} · {subscriber.age}</span></div><div class="profile-copy">{esc(subscriber.persona_desc)}</div></div><div class="chip-row"><span class="chip chip-blue">{esc(subscriber.primary_language)}</span><span class="chip">{esc(subscriber.secondary_language or "No secondary language")}</span>{tags}<span class="chip">{history_size} watched</span></div></section>''',unsafe_allow_html=True)
@@ -1073,7 +1094,7 @@ elif st.session_state.current_module == "studio":
         catalog_movies = database.get_all_movies()
         catalog_size = len(catalog_movies)
         st.markdown('<div class="feed-head feed-head-popular"><h2>Popular Now</h2><span>STATIC BASELINE</span></div><p class="feed-copy">The same ordering is delivered to every subscriber, regardless of language or prior viewing.</p>',unsafe_allow_html=True)
-        popular_cards = "".join(title_card_html(item, primary_language=subscriber.primary_language, secondary_language=subscriber.secondary_language, user_prefs=subscriber.preferences) for item in engine.get_static_popular_feed(limit=catalog_size))
+        popular_cards = "".join(title_card_html(item, primary_language=subscriber.primary_language, secondary_language=subscriber.secondary_language, user_prefs=subscriber.preferences, feedback_user_id=subscriber.user_id) for item in engine.get_static_popular_feed(limit=catalog_size))
         st.markdown(f'<div class="studio-browse-rail" aria-label="Popular titles">{popular_cards}</div>', unsafe_allow_html=True)
 
         # Browse All Movies: complete catalog with exact matching album cards and dynamic genre filters
@@ -1087,7 +1108,7 @@ elif st.session_state.current_module == "studio":
         if selected_browse_genre != "All genres":
             browse_items = [m for m in browse_items if m["primary_genre"] == selected_browse_genre]
         if browse_items:
-            browse_cards = "".join(title_card_html(item, primary_language=subscriber.primary_language, secondary_language=subscriber.secondary_language, user_prefs=subscriber.preferences) for item in browse_items)
+            browse_cards = "".join(title_card_html(item, primary_language=subscriber.primary_language, secondary_language=subscriber.secondary_language, user_prefs=subscriber.preferences, feedback_user_id=subscriber.user_id) for item in browse_items)
             st.markdown(f'<div class="studio-browse-rail" aria-label="Browse all movies">{browse_cards}</div>', unsafe_allow_html=True)
         else:
             st.info("No titles available in this genre.")
@@ -1101,7 +1122,7 @@ elif st.session_state.current_module == "studio":
         if selected_genre != "All genres":
             recommendations = [item for item in recommendations if item["primary_genre"] == selected_genre]
         if recommendations:
-            recommendation_cards = "".join(title_card_html(item, personalized=True, user_prefs=subscriber.preferences) for item in recommendations)
+            recommendation_cards = "".join(title_card_html(item, personalized=True, user_prefs=subscriber.preferences, feedback_user_id=subscriber.user_id) for item in recommendations)
             st.markdown(f'<div class="studio-browse-rail" aria-label="Personalized recommendations">{recommendation_cards}</div>', unsafe_allow_html=True)
         else:
             st.info("This subscriber has no remaining unwatched titles in this genre.")

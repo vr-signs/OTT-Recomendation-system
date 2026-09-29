@@ -78,9 +78,23 @@ def init_db(db_path: str = None) -> None:
         FOREIGN KEY (movie_id) REFERENCES movies(movie_id) ON DELETE CASCADE
     );
 
+    -- Table 4: UserMoviePreferences (Explicit Like/Dislike Feedback Signals)
+    CREATE TABLE IF NOT EXISTS user_movie_preferences (
+        pref_id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        movie_id TEXT NOT NULL,
+        preference TEXT NOT NULL CHECK (preference IN ('like', 'dislike')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, movie_id),
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+        FOREIGN KEY (movie_id) REFERENCES movies(movie_id) ON DELETE CASCADE
+    );
+
     -- Relational Performance Optimization: B-Tree Indexes
     CREATE INDEX IF NOT EXISTS idx_watch_user ON watch_history(user_id);
     CREATE INDEX IF NOT EXISTS idx_watch_movie ON watch_history(movie_id);
+    CREATE INDEX IF NOT EXISTS idx_pref_user ON user_movie_preferences(user_id);
+    CREATE INDEX IF NOT EXISTS idx_pref_movie ON user_movie_preferences(movie_id);
     CREATE INDEX IF NOT EXISTS idx_movie_lang_genre ON movies(language, primary_genre);
     CREATE INDEX IF NOT EXISTS idx_movie_popularity ON movies(popularity_score DESC);
     """)
@@ -108,6 +122,7 @@ def seed_database(db_path: str = None, force: bool = False) -> None:
         return
 
     if force:
+        cursor.execute("DELETE FROM user_movie_preferences;")
         cursor.execute("DELETE FROM watch_history;")
         cursor.execute("DELETE FROM movies;")
         cursor.execute("DELETE FROM users;")
@@ -267,6 +282,74 @@ def record_user_interaction(user_id: str, movie_id: str, watch_percentage: float
 
         conn.commit()
         return history_id
+    finally:
+        conn.close()
+
+
+def set_user_movie_preference(user_id: str, movie_id: str, preference: str, db_path: str = None):
+    """
+    Records or toggles a subscriber's movie preference ('like' or 'dislike').
+    If preference is already set to the same value, clicking it toggles/removes it.
+    If clicked to the opposite value, it updates.
+    Returns the new state: 'like', 'dislike', or None (if removed).
+    """
+    pref_clean = str(preference).strip().lower()
+    if pref_clean not in ("like", "dislike"):
+        return None
+
+    target_path = db_path or DEFAULT_DB_PATH
+    init_db(target_path)
+    conn = get_connection(target_path)
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT preference FROM user_movie_preferences WHERE user_id = ? AND movie_id = ?;",
+            (user_id, movie_id)
+        )
+        row = cursor.fetchone()
+        if row:
+            current_pref = row[0]
+            if current_pref == pref_clean:
+                cursor.execute(
+                    "DELETE FROM user_movie_preferences WHERE user_id = ? AND movie_id = ?;",
+                    (user_id, movie_id)
+                )
+                conn.commit()
+                return None
+            else:
+                cursor.execute(
+                    "UPDATE user_movie_preferences SET preference = ?, created_at = CURRENT_TIMESTAMP WHERE user_id = ? AND movie_id = ?;",
+                    (pref_clean, user_id, movie_id)
+                )
+                conn.commit()
+                return pref_clean
+        else:
+            pref_id = f"P{int(datetime.now().timestamp() * 1000)}"
+            cursor.execute(
+                "INSERT INTO user_movie_preferences (pref_id, user_id, movie_id, preference) VALUES (?, ?, ?, ?);",
+                (pref_id, user_id, movie_id, pref_clean)
+            )
+            conn.commit()
+            return pref_clean
+    finally:
+        conn.close()
+
+
+def get_user_movie_preferences(user_id: str, db_path: str = None) -> dict:
+    """Retrieves all movie preferences for a subscriber as a dict: {movie_id: 'like' | 'dislike'}."""
+    if not user_id:
+        return {}
+    target_path = db_path or DEFAULT_DB_PATH
+    init_db(target_path)
+    conn = get_connection(target_path)
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT movie_id, preference FROM user_movie_preferences WHERE user_id = ?;",
+            (user_id,)
+        )
+        rows = cursor.fetchall()
+        return {row[0]: row[1] for row in rows}
     finally:
         conn.close()
 
