@@ -478,6 +478,18 @@ body:has(.landing-header-marker) .st-key-landing_hero:before {{ top:clamp(180px,
 .card-foot-reason {{ flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }}
 .card-pref-actions {{ display:inline-flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto; }}
 .pref-btn {{ display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;border:1px solid var(--line-soft);background:color-mix(in srgb,var(--surface) 86%,transparent);color:var(--ink-soft);font-size:.72rem;line-height:1;cursor:pointer;padding:0;transition:all 140ms ease;user-select:none;box-shadow:none;text-decoration:none; }}
+.title-card-open {{ display:block;color:inherit;text-decoration:none;cursor:pointer; }}
+.title-card-open:focus-visible {{ outline:2px solid var(--blue);outline-offset:-3px;border-radius:var(--radius) var(--radius) 0 0; }}
+.title-card-open:hover .title-name {{ color:var(--blue); }}
+.movie-detail-card {{ display:grid;grid-template-columns:112px minmax(0,1fr);gap:18px;align-items:start;padding:4px 0 6px; }}
+.movie-detail-poster {{ min-height:156px;border-radius:18px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 12px 28px rgba(0,0,0,.16); }}
+.movie-detail-poster strong {{ font-size:1.7rem;letter-spacing:-.06em;line-height:1; }}
+.movie-detail-copy h3 {{ margin:0 0 5px;color:var(--ink);font-size:1.36rem;letter-spacing:-.04em; }}
+.movie-detail-meta {{ color:var(--muted);font-size:.82rem;margin:0 0 12px; }}
+.movie-detail-copy p {{ color:var(--ink-soft);font-size:.9rem;line-height:1.58;margin:0 0 13px; }}
+.movie-detail-cast {{ padding:10px 12px;border:1px solid var(--line-soft);border-radius:12px;background:var(--hover-bg);color:var(--muted);font-size:.76rem;line-height:1.45; }}
+.movie-detail-actions {{ display:flex;justify-content:flex-end;gap:8px;margin-top:16px; }}
+.movie-detail-actions button {{ min-height:38px !important;border-radius:12px !important; }}
 .pref-btn:hover {{ background:var(--hover-bg);border-color:var(--line);transform:translateY(-1px); }}
 .pref-btn.is-active-like {{ background:var(--blue-wash) !important;border-color:rgba(0,113,227,.42) !important;color:var(--blue) !important;box-shadow:0 1px 4px rgba(0,113,227,.18),inset 0 1px 0 var(--glass-inset) !important; }}
 .pref-btn.is-active-dislike {{ background:rgba(255,69,58,.14) !important;border-color:rgba(255,69,58,.42) !important;color:#ff453a !important;box-shadow:0 1px 4px rgba(255,69,58,.18),inset 0 1px 0 var(--glass-inset) !important; }}
@@ -611,7 +623,9 @@ def get_system_engine():
     database.seed_database()
     return recommender.HybridScoringEngine()
 
+database.seed_database()
 engine = get_system_engine()
+engine.refresh()
 NAV_ITEMS = [("Overview","overview"),("Coursework","coursework"),("Data","data"),("Model Lab","model"),("Studio","studio"),("Analytics","analytics")]
 NAV_LOOKUP = dict(NAV_ITEMS)
 NAV_LABELS = [label for label, _ in NAV_ITEMS]
@@ -638,6 +652,39 @@ if "signed_in_identifier" not in st.session_state:
     st.session_state.signed_in_identifier = None
 engine.set_hyperparameters(st.session_state.k_neighbors, st.session_state.alpha_weight)
 
+def load_preference_map(user_id):
+    """Keep Studio usable with older deployed database helpers."""
+    reader = getattr(database, "get_user_movie_preferences", None)
+    if callable(reader):
+        return reader(user_id)
+    conn = database.get_connection()
+    try:
+        rows = conn.execute("SELECT movie_id, preference FROM user_movie_preferences WHERE user_id = ?;", (user_id,)).fetchall()
+        return {row[0]: row[1] for row in rows}
+    finally:
+        conn.close()
+
+def save_preference(user_id, movie_id, preference):
+    writer = getattr(database, "set_user_movie_preference", None)
+    if callable(writer):
+        return writer(user_id, movie_id, preference)
+    conn = database.get_connection()
+    try:
+        current = conn.execute("SELECT preference FROM user_movie_preferences WHERE user_id = ? AND movie_id = ?;", (user_id, movie_id)).fetchone()
+        if current and current[0] == preference:
+            conn.execute("DELETE FROM user_movie_preferences WHERE user_id = ? AND movie_id = ?;", (user_id, movie_id))
+            result = None
+        elif current:
+            conn.execute("UPDATE user_movie_preferences SET preference = ? WHERE user_id = ? AND movie_id = ?;", (preference, user_id, movie_id))
+            result = preference
+        else:
+            conn.execute("INSERT INTO user_movie_preferences (pref_id, user_id, movie_id, preference) VALUES (?, ?, ?, ?);", (f"P{int(pd.Timestamp.now().timestamp() * 1000)}", user_id, movie_id, preference))
+            result = preference
+        conn.commit()
+        return result
+    finally:
+        conn.close()
+
 # Feedback controls are rendered inside the movie-card HTML, so their local
 # route also carries the already active demo subscriber.  A full page request
 # opens a new Streamlit session; restoring that subscriber here keeps the
@@ -648,7 +695,7 @@ feedback_user = st.query_params.get("pref_user")
 if feedback_movie and feedback_action in {"like", "dislike"} and feedback_user:
     known_users = database.get_all_users()
     if feedback_user in set(known_users["user_id"].astype(str)):
-        database.set_user_movie_preference(str(feedback_user), str(feedback_movie), str(feedback_action))
+        save_preference(str(feedback_user), str(feedback_movie), str(feedback_action))
         engine.refresh()
         st.session_state.logged_in_user_id = str(feedback_user)
         st.session_state.selected_user_id = str(feedback_user)
@@ -657,6 +704,21 @@ if feedback_movie and feedback_action in {"like", "dislike"} and feedback_user:
     for feedback_key in ("pref_movie", "pref_action", "pref_user"):
         if feedback_key in st.query_params:
             del st.query_params[feedback_key]
+    st.rerun()
+
+detail_movie = st.query_params.get("detail_movie")
+detail_user = st.query_params.get("detail_user")
+if detail_movie and detail_user:
+    known_users = database.get_all_users()
+    if detail_user in set(known_users["user_id"].astype(str)):
+        st.session_state.logged_in_user_id = str(detail_user)
+        st.session_state.selected_user_id = str(detail_user)
+        st.session_state.current_module = "studio"
+        st.session_state.streamglass_main_nav = "Studio"
+        st.session_state.studio_detail_movie = str(detail_movie)
+    for detail_key in ("detail_movie", "detail_user"):
+        if detail_key in st.query_params:
+            del st.query_params[detail_key]
     st.rerun()
 
 is_landing = st.session_state.current_module == "landing"
@@ -802,10 +864,42 @@ def title_card_html(item,personalized=False,primary_language=None,secondary_lang
     feedback_user_query = quote(str(feedback_user_id or ""), safe="")
     feedback_movie_query = quote(str(movie_id), safe="")
     pref_html = f'''<div class="card-pref-actions" aria-label="Feedback for {title}"><a class="pref-btn pref-like{like_cls}" title="Like" aria-label="Like {title}" href="?pref_movie={feedback_movie_query}&amp;pref_action=like&amp;pref_user={feedback_user_query}">👍</a><a class="pref-btn pref-dislike{dislike_cls}" title="Dislike" aria-label="Dislike {title}" href="?pref_movie={feedback_movie_query}&amp;pref_action=dislike&amp;pref_user={feedback_user_query}">👎</a></div>'''
+    detail_href = f'?detail_movie={feedback_movie_query}&amp;detail_user={feedback_user_query}'
 
-    return f'''<article class="title-card" id="card-{movie_id}"><div class="title-top"><div class="poster-swatch" style="background:{accent}"><span class="poster-id">{esc(movie_id)}</span><span class="poster-year">{esc(item["release_year"])}</span></div><div class="title-detail"><div class="title-meta"><span>{language} · {genre}</span>{status}</div><div class="title-name">{title}</div><p>{secondary} · {esc(item["duration_min"])} min</p></div></div><div class="card-foot"><span class="card-foot-reason">{reason}</span>{pref_html}</div></article>'''
+    return f'''<article class="title-card" id="card-{movie_id}"><a class="title-card-open" href="{detail_href}" aria-label="Open details for {title}"><div class="title-top"><div class="poster-swatch" style="background:{accent}"><span class="poster-id">{esc(movie_id)}</span><span class="poster-year">{esc(item["release_year"])}</span></div><div class="title-detail"><div class="title-meta"><span>{language} · {genre}</span>{status}</div><div class="title-name">{title}</div><p>{secondary} · {esc(item["duration_min"])} min</p></div></div></a><div class="card-foot"><span class="card-foot-reason">{reason}</span>{pref_html}</div></article>'''
 def title_card(item,personalized=False,primary_language=None,secondary_language=None,user_prefs=None,feedback_user_id=None):
     st.markdown(title_card_html(item, personalized, primary_language, secondary_language, user_prefs, feedback_user_id), unsafe_allow_html=True)
+
+@st.dialog("Title details", width="large")
+def show_movie_detail(movie, subscriber):
+    cast = movie.get("cast_members", movie.get("cast", []))
+    if isinstance(cast, str):
+        try:
+            import json
+            cast = json.loads(cast)
+        except Exception:
+            cast = [cast]
+    cast_text = " · ".join(str(person) for person in (cast or [])) or "Cast details unavailable"
+    accent = esc(movie.get("accent_color", "#5f789c"))
+    st.markdown(
+        f'''<div class="movie-detail-card"><div class="movie-detail-poster" style="background:{accent}"><span>{esc(movie.get("language", "Regional"))}</span><strong>{esc(movie.get("movie_id", "SG"))}</strong><span>{esc(movie.get("release_year", ""))}</span></div><div class="movie-detail-copy"><h3>{esc(movie.get("title", "Title"))}</h3><div class="movie-detail-meta">{esc(movie.get("primary_genre", ""))} · {esc(movie.get("secondary_genre") or "Feature")} · {esc(movie.get("duration_min", ""))} min · ★ {float(movie.get("avg_rating", 0)):.1f}/5</div><p>{esc(movie.get("synopsis") or "A StreamGlass catalog title.")}</p><div class="movie-detail-cast"><b>Director</b> · {esc(movie.get("director") or "Independent")}<br><b>Cast</b> · {esc(cast_text)}</div></div></div>''',
+        unsafe_allow_html=True,
+    )
+    left, _, like_col, dislike_col = st.columns([1.9, 2.3, 1, 1], gap="small")
+    with left:
+        st.caption("Your feedback updates this subscriber’s recommendations.")
+    with like_col:
+        if st.button("👍", key=f"detail_like_{movie['movie_id']}", help="Like this title", use_container_width=True):
+            save_preference(subscriber.user_id, movie["movie_id"], "like")
+            engine.refresh()
+            st.session_state.pop("studio_detail_movie", None)
+            st.rerun()
+    with dislike_col:
+        if st.button("👎", key=f"detail_dislike_{movie['movie_id']}", help="Dislike this title", use_container_width=True):
+            save_preference(subscriber.user_id, movie["movie_id"], "dislike")
+            engine.refresh()
+            st.session_state.pop("studio_detail_movie", None)
+            st.rerun()
 def profile_surface(subscriber,history_size):
     tags="".join(f'<span class="chip">{esc(genre)}</span>' for genre in subscriber.preferred_genres)
     st.markdown(f'''<section class="profile-card"><div><div class="profile-title">{esc(subscriber.name)} <span style="color:#86868b;font-weight:500;font-size:.83rem">· {esc(subscriber.user_id)} · {subscriber.age}</span></div><div class="profile-copy">{esc(subscriber.persona_desc)}</div></div><div class="chip-row"><span class="chip chip-blue">{esc(subscriber.primary_language)}</span><span class="chip">{esc(subscriber.secondary_language or "No secondary language")}</span>{tags}<span class="chip">{history_size} watched</span></div></section>''',unsafe_allow_html=True)
@@ -915,7 +1009,7 @@ elif st.session_state.current_module == "overview":
     page_header("Personalized discovery, made legible","A calmer way to understand an OTT recommendation engine.","StreamGlass brings the subscriber, catalog, and recommendation model into one focused academic product—without hiding the mathematics behind the interface.")
     left,right=st.columns([1.18,.82],gap="large")
     with left: st.markdown('''<section class="surface"><h3>Why StreamGlass exists</h3><div class="quote">A regional streaming platform should not present the same popular list to every viewer.</div><p>The system counters catalog starvation by accounting for language, genre, historic interactions, and the relationships that form in co-watch behavior.</p><ul><li><b>Regional relevance</b> supports primary and secondary language affinity.</li><li><b>Catalog diversity</b> is preserved through equivalence-class partitioning.</li><li><b>Transparent ranking</b> exposes the signals behind every recommendation.</li></ul></section>''',unsafe_allow_html=True)
-    with right: st.markdown('''<section class="surface"><h3>Project dossier</h3><div class="people-list"><div class="person-row"><span>Kovvuri Venkata Reddy</span><code>25B21A4502</code></div><div class="person-row"><span>Pantadi H. Durga Prasad</span><code>25B21A4503</code></div><div class="person-row"><span>Battula Sravan Kumar</span><code>25B21A4501</code></div><div class="person-row"><span>Bodireddy Kanaka Mani</span><code>25B21A4504</code></div><div class="person-row"><span>Kapa Kumar</span><code>25B21A4506</code></div></div></section>''',unsafe_allow_html=True)
+    with right: st.markdown('''<section class="surface"><h3>Project dossier</h3><div class="people-list"><div class="person-row"><span>Kovvuri Venkata Reddy</span><code>25B21A4502</code></div><div class="person-row"><span>Pantadi Hemanth</span><code>25B21A4503</code></div><div class="person-row"><span>Battula Sravan Kumar</span><code>25B21A4501</code></div><div class="person-row"><span>B. Sindhu</span><code>25B21A4504</code></div><div class="person-row"><span>Kapa Kumar</span><code>25B21A4506</code></div></div></section>''',unsafe_allow_html=True)
     section_heading("The intelligence pipeline","Four academic perspectives, connected in a single recommendation flow.")
     steps=[("DBMS","Relational ingestion","3NF SQLite schema records subscribers, titles, and watch events.","#0071e3"),("DMGT","Quotient partitioning","Equivalence classes protect language–genre diversity in discovery.","#248a3d"),("ADSA","Co-watch topology","Weighted adjacency lists surface bridge titles and neighbor paths.","#b25000"),("OOPJ + ML","Hybrid scoring","Cosine similarity and graph centrality shape personal relevance.","#5c5ce2")]
     for column,(label,title,copy,color) in zip(st.columns(4,gap="small"),steps):
@@ -1073,7 +1167,7 @@ elif st.session_state.current_module == "studio":
             parts = pref_signal.split("::")
             if len(parts) >= 2:
                 m_target, a_target = parts[0], parts[1]
-                database.set_user_movie_preference(subscriber.user_id, m_target, a_target)
+                save_preference(subscriber.user_id, m_target, a_target)
                 engine.refresh()
                 st.rerun()
 
@@ -1081,18 +1175,25 @@ elif st.session_state.current_module == "studio":
         if "pref_action" in st.query_params and "pref_movie" in st.query_params:
             p_action = st.query_params.get("pref_action")
             p_movie = st.query_params.get("pref_movie")
-            database.set_user_movie_preference(subscriber.user_id, p_movie, p_action)
+            save_preference(subscriber.user_id, p_movie, p_action)
             del st.query_params["pref_action"]
             del st.query_params["pref_movie"]
             engine.refresh()
             st.rerun()
 
         # Load live subscriber preferences from database
-        subscriber.load_preferences(database.get_user_movie_preferences(subscriber.user_id))
+        subscriber.load_preferences(load_preference_map(subscriber.user_id))
 
         # Browse rails keep the existing card treatment while allowing Netflix-style catalog exploration.
         catalog_movies = database.get_all_movies()
         catalog_size = len(catalog_movies)
+        detail_movie_id = st.session_state.get("studio_detail_movie")
+        if detail_movie_id:
+            detail_rows = catalog_movies[catalog_movies["movie_id"] == detail_movie_id]
+            if detail_rows.empty:
+                st.session_state.pop("studio_detail_movie", None)
+            else:
+                show_movie_detail(detail_rows.iloc[0].to_dict(), subscriber)
         st.markdown('<div class="feed-head feed-head-popular"><h2>Popular Now</h2><span>STATIC BASELINE</span></div><p class="feed-copy">The same ordering is delivered to every subscriber, regardless of language or prior viewing.</p>',unsafe_allow_html=True)
         popular_cards = "".join(title_card_html(item, primary_language=subscriber.primary_language, secondary_language=subscriber.secondary_language, user_prefs=subscriber.preferences, feedback_user_id=subscriber.user_id) for item in engine.get_static_popular_feed(limit=catalog_size))
         st.markdown(f'<div class="studio-browse-rail" aria-label="Popular titles">{popular_cards}</div>', unsafe_allow_html=True)

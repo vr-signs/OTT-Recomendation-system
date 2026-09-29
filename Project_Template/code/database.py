@@ -116,7 +116,29 @@ def seed_database(db_path: str = None, force: bool = False) -> None:
     cursor.execute("SELECT COUNT(*) FROM users;")
     user_count = cursor.fetchone()[0]
 
+    users_file = os.path.join(SAMPLE_DATA_DIR, "users.json")
+    movies_file = os.path.join(SAMPLE_DATA_DIR, "movies.json")
+    history_file = os.path.join(SAMPLE_DATA_DIR, "watch_history.csv")
+
     if user_count > 0 and not force:
+        # Keep an existing demo database intact while allowing newly curated
+        # catalog titles to become available after an application update.
+        if os.path.exists(movies_file):
+            with open(movies_file, "r", encoding="utf-8") as f:
+                for m in json.load(f):
+                    cursor.execute("""
+                    INSERT OR IGNORE INTO movies
+                    (movie_id, title, release_year, language, primary_genre, secondary_genre,
+                     director, cast_members, synopsis, avg_rating, popularity_score, duration_min, accent_color)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    """, (
+                        m["movie_id"], m["title"], m["release_year"], m["language"],
+                        m["primary_genre"], m.get("secondary_genre"), m["director"],
+                        json.dumps(m["cast"]), m.get("synopsis", ""), m.get("avg_rating", 0.0),
+                        m.get("popularity_score", 50.0), m.get("duration_min", 120),
+                        m.get("accent_color", "#4F46E5")
+                    ))
+        conn.commit()
         conn.close()
         return
 
@@ -126,10 +148,6 @@ def seed_database(db_path: str = None, force: bool = False) -> None:
         cursor.execute("DELETE FROM movies;")
         cursor.execute("DELETE FROM users;")
         conn.commit()
-
-    users_file = os.path.join(SAMPLE_DATA_DIR, "users.json")
-    movies_file = os.path.join(SAMPLE_DATA_DIR, "movies.json")
-    history_file = os.path.join(SAMPLE_DATA_DIR, "watch_history.csv")
 
     # 1. Ingest Users
     if os.path.exists(users_file):
