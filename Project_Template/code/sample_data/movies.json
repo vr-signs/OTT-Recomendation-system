@@ -12,7 +12,8 @@
     "avg_rating": 4.6,
     "popularity_score": 98,
     "duration_min": 181,
-    "accent_color": "#D4AF37"
+    "accent_color": "#D4AF37",
+    "ott_platforms": [{"name": "Prime Video"}]
   },
   {
     "movie_id": "M102",
@@ -27,7 +28,8 @@
     "avg_rating": 4.9,
     "popularity_score": 99,
     "duration_min": 187,
-    "accent_color": "#FF4500"
+    "accent_color": "#FF4500",
+    "ott_platforms": [{"name": "Netflix"}]
   },
   {
     "movie_id": "M103",
@@ -42,7 +44,8 @@
     "avg_rating": 4.3,
     "popularity_score": 92,
     "duration_min": 175,
-    "accent_color": "#800000"
+    "accent_color": "#800000",
+    "ott_platforms": [{"name": "Netflix"}, {"name": "JioHotstar"}]
   },
   {
     "movie_id": "M104",
@@ -57,7 +60,8 @@
     "avg_rating": 4.7,
     "popularity_score": 85,
     "duration_min": 155,
-    "accent_color": "#FF69B4"
+    "accent_color": "#FF69B4",
+    "ott_platforms": [{"name": "Netflix"}]
   },
   {
     "movie_id": "M105",
@@ -72,7 +76,8 @@
     "avg_rating": 4.4,
     "popularity_score": 80,
     "duration_min": 145,
-    "accent_color": "#32CD32"
+    "accent_color": "#32CD32",
+    "ott_platforms": [{"name": "Prime Video"}, {"name": "MX Player"}]
   },
   {
     "movie_id": "M106",
@@ -87,7 +92,8 @@
     "avg_rating": 4.5,
     "popularity_score": 84,
     "duration_min": 120,
-    "accent_color": "#4B0082"
+    "accent_color": "#4B0082",
+    "ott_platforms": [{"name": "Prime Video"}]
   },
   {
     "movie_id": "M107",
@@ -102,7 +108,8 @@
     "avg_rating": 4.5,
     "popularity_score": 95,
     "duration_min": 164,
-    "accent_color": "#DC143C"
+    "accent_color": "#DC143C",
+    "ott_platforms": [{"name": "Netflix"}]
   },
   {
     "movie_id": "M108",
@@ -117,7 +124,8 @@
     "avg_rating": 4.6,
     "popularity_score": 94,
     "duration_min": 168,
-    "accent_color": "#FF8C00"
+    "accent_color": "#FF8C00",
+    "ott_platforms": [{"name": "Prime Video"}, {"name": "Sun NXT"}, {"name": "MX Player"}]
   },
   {
     "movie_id": "M109",
@@ -132,7 +140,8 @@
     "avg_rating": 4.8,
     "popularity_score": 93,
     "duration_min": 174,
-    "accent_color": "#1C1C1C"
+    "accent_color": "#1C1C1C",
+    "ott_platforms": [{"name": "JioHotstar"}]
   },
   {
     "movie_id": "M110",
@@ -147,7 +156,8 @@
     "avg_rating": 4.7,
     "popularity_score": 82,
     "duration_min": 158,
-    "accent_color": "#20B2AA"
+    "accent_color": "#20B2AA",
+    "ott_platforms": [{"name": "SonyLIV"}]
   },
   {
     "movie_id": "M111",
@@ -162,7 +172,8 @@
     "avg_rating": 4.6,
     "popularity_score": 83,
     "duration_min": 147,
-    "accent_color": "#2F4F4F"
+    "accent_color": "#2F4F4F",
+    "ott_platforms": [{"name": "SonyLIV"}]
   },
   {
     "movie_id": "M112",
@@ -177,7 +188,8 @@
     "avg_rating": 4.5,
     "popularity_score": 78,
     "duration_min": 140,
-    "accent_color": "#8FBC8F"
+    "accent_color": "#8FBC8F",
+    "ott_platforms": [{"name": "Netflix"}]
   },
   {
     "movie_id": "M113",
@@ -192,7 +204,8 @@
     "avg_rating": 4.9,
     "popularity_score": 96,
     "duration_min": 147,
-    "accent_color": "#DAA520"
+    "accent_color": "#DAA520",
+    "ott_platforms": [{"name": "JioHotstar"}]
   },
   {
     "movie_id": "M114",
@@ -207,7 +220,8 @@
     "avg_rating": 4.8,
     "popularity_score": 91,
     "duration_min": 139,
-    "accent_color": "#800080"
+    "accent_color": "#800080",
+    "ott_platforms": [{"name": "Prime Video"}, {"name": "JioHotstar"}]
   },
   {
     "movie_id": "M115",
@@ -222,7 +236,8 @@
     "avg_rating": 4.1,
     "popularity_score": 87,
     "duration_min": 167,
-    "accent_color": "#FF4500"
+    "accent_color": "#FF4500",
+    "ott_platforms": [{"name": "JioHotstar"}]
   },
   {
     "movie_id": "M116",
@@ -237,7 +252,8 @@
     "avg_rating": 4.4,
     "popularity_score": 93,
     "duration_min": 147,
-    "accent_color": "#8B0000"
+    "accent_color": "#8B0000",
+    "ott_platforms": [{"name": "Prime Video"}]
   },
   {
     "movie_id": "M117",
@@ -252,7 +268,8 @@
     "avg_rating": 4.9,
     "popularity_score": 97,
     "duration_min": 169,
-    "accent_color": "#00CED1"
+    "accent_color": "#00CED1",
+    "ott_platforms": [{"name": "Prime Video"}, {"name": "JioHotstar"}]
   },
   {
     "movie_id": "M118",
@@ -267,7 +284,8 @@
     "avg_rating": 4.8,
     "popularity_score": 95,
     "duration_min": 148,
-    "accent_color": "#4682B4"
+    "accent_color": "#4682B4",
+    "ott_platforms": [{"name": "Prime Video"}, {"name": "JioHotstar"}]
   },
   {
     "movie_id": "M119",
@@ -282,7 +300,8 @@
     "avg_rating": 4.7,
     "popularity_score": 88,
     "duration_min": 130,
-    "accent_color": "#B8860B"
+    "accent_color": "#B8860B",
+    "ott_platforms": [{"name": "Netflix"}]
   },
   {
     "movie_id": "M120",
@@ -297,7 +316,8 @@
     "avg_rating": 4.6,
     "popularity_score": 86,
     "duration_min": 99,
-    "accent_color": "#E9967A"
+    "accent_color": "#E9967A",
+    "ott_platforms": [{"name": "JioHotstar"}]
   },
   {
     "movie_id": "M121",
@@ -312,7 +332,8 @@
     "avg_rating": 4.7,
     "popularity_score": 90,
     "duration_min": 163,
-    "accent_color": "#C86B85"
+    "accent_color": "#C86B85",
+    "ott_platforms": [{"name": "Prime Video"}]
   },
   {
     "movie_id": "M122",
@@ -327,7 +348,8 @@
     "avg_rating": 4.3,
     "popularity_score": 76,
     "duration_min": 149,
-    "accent_color": "#4A90A4"
+    "accent_color": "#4A90A4",
+    "ott_platforms": [{"name": "Prime Video"}, {"name": "MX Player"}]
   },
   {
     "movie_id": "M123",
@@ -342,7 +364,8 @@
     "avg_rating": 4.4,
     "popularity_score": 79,
     "duration_min": 144,
-    "accent_color": "#6BAF92"
+    "accent_color": "#6BAF92",
+    "ott_platforms": [{"name": "JioHotstar"}]
   },
   {
     "movie_id": "M124",
@@ -357,7 +380,8 @@
     "avg_rating": 4.7,
     "popularity_score": 91,
     "duration_min": 145,
-    "accent_color": "#A34B35"
+    "accent_color": "#A34B35",
+    "ott_platforms": [{"name": "JioHotstar"}, {"name": "MX Player"}]
   },
   {
     "movie_id": "M125",
@@ -372,7 +396,8 @@
     "avg_rating": 4.8,
     "popularity_score": 88,
     "duration_min": 160,
-    "accent_color": "#5C7CB2"
+    "accent_color": "#5C7CB2",
+    "ott_platforms": [{"name": "Sun NXT"}, {"name": "JioHotstar"}, {"name": "ZEE5"}]
   },
   {
     "movie_id": "M126",
@@ -387,7 +412,8 @@
     "avg_rating": 4.6,
     "popularity_score": 84,
     "duration_min": 104,
-    "accent_color": "#596273"
+    "accent_color": "#596273",
+    "ott_platforms": [{"name": "Netflix"}]
   },
   {
     "movie_id": "M127",
@@ -402,6 +428,7 @@
     "avg_rating": 4.5,
     "popularity_score": 89,
     "duration_min": 141,
-    "accent_color": "#C66D3B"
+    "accent_color": "#C66D3B",
+    "ott_platforms": [{"name": "JioHotstar"}]
   }
 ]

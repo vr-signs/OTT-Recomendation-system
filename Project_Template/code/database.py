@@ -62,7 +62,8 @@ def init_db(db_path: str = None) -> None:
         avg_rating REAL DEFAULT 0.0 CHECK (avg_rating >= 0.0 AND avg_rating <= 5.0),
         popularity_score REAL DEFAULT 50.0 CHECK (popularity_score >= 0 AND popularity_score <= 100),
         duration_min INTEGER DEFAULT 120,
-        accent_color TEXT DEFAULT '#4F46E5'
+        accent_color TEXT DEFAULT '#4F46E5',
+        ott_platforms TEXT NOT NULL DEFAULT '[]' -- JSON Array of verified streaming availability
     );
 
     -- Table 3: WatchHistory Transaction Table (Relational Intersection)
@@ -98,6 +99,12 @@ def init_db(db_path: str = None) -> None:
     CREATE INDEX IF NOT EXISTS idx_movie_popularity ON movies(popularity_score DESC);
     """)
 
+    # Lightweight migration for existing local demo databases created before
+    # platform availability became part of the movie catalog model.
+    movie_columns = {row[1] for row in cursor.execute("PRAGMA table_info(movies);").fetchall()}
+    if "ott_platforms" not in movie_columns:
+        cursor.execute("ALTER TABLE movies ADD COLUMN ott_platforms TEXT NOT NULL DEFAULT '[]';")
+
     conn.commit()
     conn.close()
 
@@ -129,15 +136,22 @@ def seed_database(db_path: str = None, force: bool = False) -> None:
                     cursor.execute("""
                     INSERT OR IGNORE INTO movies
                     (movie_id, title, release_year, language, primary_genre, secondary_genre,
-                     director, cast_members, synopsis, avg_rating, popularity_score, duration_min, accent_color)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                     director, cast_members, synopsis, avg_rating, popularity_score, duration_min, accent_color, ott_platforms)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
                     """, (
                         m["movie_id"], m["title"], m["release_year"], m["language"],
                         m["primary_genre"], m.get("secondary_genre"), m["director"],
                         json.dumps(m["cast"]), m.get("synopsis", ""), m.get("avg_rating", 0.0),
                         m.get("popularity_score", 50.0), m.get("duration_min", 120),
-                        m.get("accent_color", "#4F46E5")
+                        m.get("accent_color", "#4F46E5"),
+                        json.dumps(m.get("ott_platforms", []))
                     ))
+                    # Existing catalog rows keep their established metadata but
+                    # receive any new structured availability curated in JSON.
+                    cursor.execute(
+                        "UPDATE movies SET ott_platforms = ? WHERE movie_id = ?;",
+                        (json.dumps(m.get("ott_platforms", [])), m["movie_id"])
+                    )
         conn.commit()
         conn.close()
         return
@@ -176,8 +190,8 @@ def seed_database(db_path: str = None, force: bool = False) -> None:
                 cursor.execute("""
                 INSERT OR REPLACE INTO movies
                 (movie_id, title, release_year, language, primary_genre, secondary_genre,
-                 director, cast_members, synopsis, avg_rating, popularity_score, duration_min, accent_color)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                 director, cast_members, synopsis, avg_rating, popularity_score, duration_min, accent_color, ott_platforms)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
                 """, (
                     m["movie_id"],
                     m["title"],
@@ -191,7 +205,8 @@ def seed_database(db_path: str = None, force: bool = False) -> None:
                     m.get("avg_rating", 0.0),
                     m.get("popularity_score", 50.0),
                     m.get("duration_min", 120),
-                    m.get("accent_color", "#4F46E5")
+                    m.get("accent_color", "#4F46E5"),
+                    json.dumps(m.get("ott_platforms", []))
                 ))
 
     # 3. Ingest Watch History

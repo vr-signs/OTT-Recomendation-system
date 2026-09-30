@@ -32,7 +32,8 @@ class ContentItem:
                  language: str, primary_genre: str, secondary_genre: Optional[str],
                  director: str, cast_members: List[str], synopsis: str,
                  avg_rating: float, popularity_score: float,
-                 duration_min: int = 120, accent_color: str = "#4F46E5"):
+                 duration_min: int = 120, accent_color: str = "#4F46E5",
+                 ott_platforms: Any = "[]"):
         self.movie_id = movie_id
         self.title = title
         self.release_year = release_year
@@ -46,6 +47,7 @@ class ContentItem:
         self.popularity_score = popularity_score
         self.duration_min = duration_min
         self.accent_color = accent_color
+        self.ott_platforms = ott_platforms
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ContentItem":
@@ -64,7 +66,8 @@ class ContentItem:
             avg_rating=float(data.get("avg_rating", 0.0)),
             popularity_score=float(data.get("popularity_score", 50.0)),
             duration_min=int(data.get("duration_min", 120)),
-            accent_color=data.get("accent_color", "#4F46E5")
+            accent_color=data.get("accent_color", "#4F46E5"),
+            ott_platforms=data.get("ott_platforms", "[]")
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -81,7 +84,8 @@ class ContentItem:
             "avg_rating": self.avg_rating,
             "popularity_score": self.popularity_score,
             "duration_min": self.duration_min,
-            "accent_color": self.accent_color
+            "accent_color": self.accent_color,
+            "ott_platforms": self.ott_platforms
         }
 
 

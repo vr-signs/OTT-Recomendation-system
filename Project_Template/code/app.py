@@ -5,6 +5,7 @@ import sys
 import html
 import math
 import re
+import json
 import base64
 import sqlite3
 from urllib.parse import quote
@@ -380,6 +381,7 @@ body:has(.landing-header-marker) .st-key-landing_hero:before {{ top:clamp(180px,
 [data-testid="stDialog"] section[role="dialog"] [data-testid="stAlert"] p {{ color:var(--ink) !important; }}
 [data-testid="stDialog"] section[role="dialog"] button[aria-label="Close"] {{ color:var(--muted) !important; }}
 @keyframes float-card {{ 0%,100% {{ translate:0 0; }} 50% {{ translate:0 -11px; }} }}
+@keyframes album-expand {{ from {{ opacity:0;transform:translateY(-6px) scale(.985);filter:blur(3px); }} to {{ opacity:1;transform:translateY(0) scale(1);filter:blur(0); }} }}
 @keyframes landing-reveal {{ from {{ opacity:0;filter:blur(9px);translate:0 13px; }} to {{ opacity:1;filter:blur(0);translate:0 0; }} }}
 @keyframes landing-line {{ from {{ opacity:0;filter:blur(7px);translate:0 18px; }} to {{ opacity:1;filter:blur(0);translate:0 0; }} }}
 @keyframes poster-reveal {{ from {{ opacity:0;filter:blur(12px);scale:.88; }} to {{ opacity:1;filter:blur(0);scale:1; }} }}
@@ -436,7 +438,7 @@ body:has(.landing-header-marker) .st-key-landing_hero:before {{ top:clamp(180px,
 .feed-head-catalog h2 {{ border-color:rgba(36,138,61,.48) !important;background:linear-gradient(135deg,rgba(36,138,61,.19),rgba(36,138,61,.07)) !important;color:var(--green) !important;font-size:1.24rem !important;font-weight:780 !important;letter-spacing:-.035em !important;box-shadow:0 4px 18px rgba(36,138,61,.18),inset 0 1px 0 rgba(255,255,255,.45) !important;border-radius:14px !important;padding:6px 16px !important; }}
 .feed-head-catalog span {{ color:var(--green) !important;background:rgba(36,138,61,.13) !important;border:1px solid rgba(36,138,61,.28) !important; }}
 .feed-copy {{ margin:0 0 15px;color:var(--muted);font-size:.83rem;line-height:1.45; }}
-.studio-browse-rail {{ display:flex;gap:14px;overflow-x:auto;overscroll-behavior-x:contain;padding:4px 2px 17px;margin:0 -2px 27px;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:var(--line) transparent; }}
+.studio-browse-rail {{ display:flex;align-items:flex-start;gap:14px;overflow-x:auto;overscroll-behavior-x:contain;padding:4px 2px 17px;margin:0 -2px 27px;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:var(--line) transparent; }}
 .studio-browse-rail::-webkit-scrollbar {{ height:7px; }}
 .studio-browse-rail::-webkit-scrollbar-thumb {{ background:var(--line);border-radius:999px; }}
 .studio-browse-rail .title-card {{ flex:0 0 min(308px,78vw);margin:0;scroll-snap-align:start; }}
@@ -463,8 +465,13 @@ body:has(.landing-header-marker) .st-key-landing_hero:before {{ top:clamp(180px,
 .st-key-studio_browse_genre_filter [data-testid="stRadioOption"] > div > div:first-child:has([data-testid="stMarkdownContainer"]),
 .st-key-studio_browse_genre_filter [data-testid="stRadioOption"] > div > [data-testid="stMarkdownContainer"]:first-child {{ display:flex !important;visibility:visible !important;opacity:1 !important;width:auto !important;height:auto !important;overflow:visible !important; }}
 @media (hover:hover) and (pointer:fine) {{ .st-key-studio_genre_filter [data-testid="stRadio"] label:hover, .st-key-studio_browse_genre_filter [data-testid="stRadio"] label:hover {{ transform:translateY(-1px);border-color:rgba(0,113,227,.26); }} }}
-.title-card {{ overflow:hidden;margin:0 0 11px;transition:transform 180ms ease,border-color 180ms ease,box-shadow 180ms ease; }}
+.title-card {{ position:relative;overflow:hidden;margin:0 0 11px;transition:transform 180ms ease,border-color 180ms ease,box-shadow 180ms ease; }}
 .title-card:hover {{ transform:translateY(-2px);border-color:var(--card-border-hover);box-shadow:var(--card-shadow-hover); }}
+.title-card:has(.movie-album[open]) {{ z-index:3;transform:translateY(-4px) scale(1.045);border-color:var(--card-border-hover);box-shadow:0 18px 36px rgba(16,42,72,.20),inset 0 1px 0 var(--glass-inset); }}
+.movie-album {{ display:block; }}
+.movie-album > summary {{ display:block;list-style:none;cursor:pointer; }}
+.movie-album > summary::-webkit-details-marker {{ display:none; }}
+.movie-album > summary:focus-visible {{ outline:2px solid var(--blue);outline-offset:-3px;border-radius:var(--radius) var(--radius) 0 0; }}
 .title-top {{ display:flex;min-height:104px; }}
 .poster-swatch {{ width:92px;flex:none;padding:12px;display:flex;flex-direction:column;justify-content:space-between;color:#fff;position:relative;overflow:hidden; }}
 .poster-swatch:after {{ content:"";position:absolute;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.16);right:-54px;top:-42px; }}
@@ -478,18 +485,21 @@ body:has(.landing-header-marker) .st-key-landing_hero:before {{ top:clamp(180px,
 .card-foot-reason {{ flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }}
 .card-pref-actions {{ display:inline-flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto; }}
 .pref-btn {{ display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;border:1px solid var(--line-soft);background:color-mix(in srgb,var(--surface) 86%,transparent);color:var(--ink-soft);font-size:.72rem;line-height:1;cursor:pointer;padding:0;transition:all 140ms ease;user-select:none;box-shadow:none;text-decoration:none; }}
-.title-card-open {{ display:block;color:inherit;text-decoration:none;cursor:pointer; }}
-.title-card-open:focus-visible {{ outline:2px solid var(--blue);outline-offset:-3px;border-radius:var(--radius) var(--radius) 0 0; }}
-.title-card-open:hover .title-name {{ color:var(--blue); }}
-.movie-detail-card {{ display:grid;grid-template-columns:112px minmax(0,1fr);gap:18px;align-items:start;padding:4px 0 6px; }}
-.movie-detail-poster {{ min-height:156px;border-radius:18px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 12px 28px rgba(0,0,0,.16); }}
-.movie-detail-poster strong {{ font-size:1.7rem;letter-spacing:-.06em;line-height:1; }}
-.movie-detail-copy h3 {{ margin:0 0 5px;color:var(--ink);font-size:1.36rem;letter-spacing:-.04em; }}
-.movie-detail-meta {{ color:var(--muted);font-size:.82rem;margin:0 0 12px; }}
-.movie-detail-copy p {{ color:var(--ink-soft);font-size:.9rem;line-height:1.58;margin:0 0 13px; }}
-.movie-detail-cast {{ padding:10px 12px;border:1px solid var(--line-soft);border-radius:12px;background:var(--hover-bg);color:var(--muted);font-size:.76rem;line-height:1.45; }}
-.movie-detail-actions {{ display:flex;justify-content:flex-end;gap:8px;margin-top:16px; }}
-.movie-detail-actions button {{ min-height:38px !important;border-radius:12px !important; }}
+.movie-album:hover .title-name,.movie-album[open] .title-name {{ color:var(--blue); }}
+.album-expanded {{ display:block;max-height:0;overflow:hidden;opacity:0;visibility:hidden;border-top:0 solid var(--line-soft);background:color-mix(in srgb,var(--surface-raised) 62%,transparent);transition:max-height 280ms cubic-bezier(.2,.8,.2,1),opacity 180ms ease,visibility 0s linear 280ms,border-top 180ms ease; }}
+.movie-album[open] .album-expanded {{ max-height:310px;opacity:1;visibility:visible;border-top-width:1px;transition: max-height 320ms cubic-bezier(.2,.8,.2,1),opacity 200ms ease,border-top 180ms ease; }}
+.album-expanded-inner {{ display:grid;grid-template-columns:70px minmax(0,1fr);gap:11px;padding:12px;animation:album-expand 260ms cubic-bezier(.2,.8,.2,1) both; }}
+.album-expanded-poster {{ min-height:94px;padding:9px;border:1px solid rgba(255,255,255,.26);border-radius:14px;color:#fff;display:flex;flex-direction:column;justify-content:space-between;box-shadow:inset 0 1px 0 rgba(255,255,255,.38),0 9px 18px rgba(0,0,0,.13);font-size:.61rem;font-weight:720;letter-spacing:.04em; }}
+.album-expanded-poster strong {{ font-size:1.25rem;letter-spacing:-.06em;line-height:1; }}
+.album-expanded-copy h3 {{ margin:0 0 3px;color:var(--ink);font-size:.95rem;line-height:1.16;letter-spacing:-.025em; }}
+.album-expanded-meta {{ color:var(--muted);font-size:.67rem;line-height:1.35; }}
+.album-expanded-copy p {{ margin:7px 0 0;color:var(--ink-soft);font-size:.73rem;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }}
+.album-platforms {{ grid-column:1 / -1;display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding-top:1px;color:var(--muted);font-size:.68rem;font-weight:720; }}
+.album-platforms-label {{ width:100%;margin-bottom:1px;color:var(--muted);font-size:.64rem;letter-spacing:.055em;text-transform:uppercase; }}
+.movie-platform-badge {{ display:inline-flex;align-items:center;gap:5px;padding:5px 7px;border:1px solid var(--line-soft);border-radius:999px;background:color-mix(in srgb,var(--surface) 74%,transparent);color:var(--ink-soft);font-size:.66rem;font-weight:720;line-height:1;box-shadow:inset 0 1px 0 var(--glass-inset);white-space:nowrap; }}
+.movie-platform-mark {{ width:16px;height:16px;flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;color:#fff;font-size:.47rem;font-weight:850;letter-spacing:-.04em;line-height:1;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 2px rgba(0,0,0,.12); }}
+.platform-netflix {{ background:#e50914; }} .platform-prime-video {{ background:#00a8e1; }} .platform-jiohotstar {{ background:#113ccf; }} .platform-zee5 {{ background:#6f00ff; }} .platform-sonyliv {{ background:linear-gradient(135deg,#472a84,#f75484); }} .platform-sun-nxt {{ background:linear-gradient(135deg,#f05a28,#f8b133); }} .platform-mx-player {{ background:#1f77ff; }}
+.album-platform-empty {{ grid-column:1 / -1;color:var(--muted);font-size:.68rem;line-height:1.35;padding-top:2px; }}
 .pref-btn:hover {{ background:var(--hover-bg);border-color:var(--line);transform:translateY(-1px); }}
 .pref-btn.is-active-like {{ background:var(--blue-wash) !important;border-color:rgba(0,113,227,.42) !important;color:var(--blue) !important;box-shadow:0 1px 4px rgba(0,113,227,.18),inset 0 1px 0 var(--glass-inset) !important; }}
 .pref-btn.is-active-dislike {{ background:rgba(255,69,58,.14) !important;border-color:rgba(255,69,58,.42) !important;color:#ff453a !important;box-shadow:0 1px 4px rgba(255,69,58,.18),inset 0 1px 0 var(--glass-inset) !important; }}
@@ -626,7 +636,7 @@ def get_system_engine():
 database.seed_database()
 engine = get_system_engine()
 engine.refresh()
-NAV_ITEMS = [("Overview","overview"),("Coursework","coursework"),("Data","data"),("Model Lab","model"),("Studio","studio"),("Analytics","analytics")]
+NAV_ITEMS = [("Overview","overview"),("Coursework","coursework"),("Data","data"),("Studio","studio"),("Analytics","analytics")]
 NAV_LOOKUP = dict(NAV_ITEMS)
 NAV_LABELS = [label for label, _ in NAV_ITEMS]
 THEME_MODES = ["Light", "Dark", "System"]
@@ -704,21 +714,6 @@ if feedback_movie and feedback_action in {"like", "dislike"} and feedback_user:
     for feedback_key in ("pref_movie", "pref_action", "pref_user"):
         if feedback_key in st.query_params:
             del st.query_params[feedback_key]
-    st.rerun()
-
-detail_movie = st.query_params.get("detail_movie")
-detail_user = st.query_params.get("detail_user")
-if detail_movie and detail_user:
-    known_users = database.get_all_users()
-    if detail_user in set(known_users["user_id"].astype(str)):
-        st.session_state.logged_in_user_id = str(detail_user)
-        st.session_state.selected_user_id = str(detail_user)
-        st.session_state.current_module = "studio"
-        st.session_state.streamglass_main_nav = "Studio"
-        st.session_state.studio_detail_movie = str(detail_movie)
-    for detail_key in ("detail_movie", "detail_user"):
-        if detail_key in st.query_params:
-            del st.query_params[detail_key]
     st.rerun()
 
 is_landing = st.session_state.current_module == "landing"
@@ -846,7 +841,49 @@ def apply_chart_theme(fig,height=None):
     fig.update_xaxes(gridcolor=grid_color,zeroline=False,linecolor=line_color)
     fig.update_yaxes(gridcolor=grid_color,zeroline=False,linecolor=line_color)
     return fig
-def title_card_html(item,personalized=False,primary_language=None,secondary_language=None,user_prefs=None,feedback_user_id=None):
+PLATFORM_BRANDS = {
+    "Netflix": {"mark": "N", "tone": "netflix", "url": "https://www.netflix.com/in/"},
+    "Prime Video": {"mark": "prime", "tone": "prime-video", "url": "https://www.primevideo.com/"},
+    "JioHotstar": {"mark": "Jio", "tone": "jiohotstar", "url": "https://www.hotstar.com/in"},
+    "ZEE5": {"mark": "Z", "tone": "zee5", "url": "https://www.zee5.com/"},
+    "SonyLIV": {"mark": "S", "tone": "sonyliv", "url": "https://www.sonyliv.com/"},
+    "Sun NXT": {"mark": "S", "tone": "sun-nxt", "url": "https://www.sunnxt.com/"},
+    "MX Player": {"mark": "MX", "tone": "mx-player", "url": "https://www.mxplayer.in/"},
+}
+
+def movie_platforms(movie):
+    """Normalize only availability explicitly stored with a catalog title."""
+    raw_platforms = movie.get("ott_platforms") or movie.get("ottPlatforms") or movie.get("platforms") or movie.get("available_on") or []
+    if isinstance(raw_platforms, str):
+        try:
+            raw_platforms = json.loads(raw_platforms)
+        except (TypeError, ValueError):
+            raw_platforms = []
+    if not isinstance(raw_platforms, (list, tuple, set)):
+        return []
+    platforms = []
+    for platform in raw_platforms:
+        if not isinstance(platform, dict) or not str(platform.get("name", "")).strip():
+            continue
+        name = str(platform["name"]).strip()
+        brand = PLATFORM_BRANDS.get(name, {})
+        platforms.append({
+            "name": name,
+            "mark": str(brand.get("mark") or name[:2]).upper(),
+            "tone": str(brand.get("tone") or ""),
+            "url": str(platform.get("url") or brand.get("url") or ""),
+        })
+    return platforms
+
+def platform_badge_html(platform, compact=False):
+    name = esc(platform["name"])
+    tone = re.sub(r"[^a-z0-9-]", "", str(platform.get("tone") or "").lower())
+    mark = esc(platform.get("mark") or str(platform["name"])[:2].upper())
+    mark_html = f'<span class="movie-platform-mark platform-{tone}" aria-hidden="true">{mark}</span>'
+    class_name = "movie-platform-badge movie-platform-badge-compact" if compact else "movie-platform-badge"
+    return f'<span class="{class_name}">{mark_html}<span>{name}</span></span>'
+
+def title_card_html(item,personalized=False,primary_language=None,secondary_language=None,user_prefs=None,feedback_user_id=None,rail_group="catalog"):
     movie_id = item["movie_id"]
     accent,title,language,genre,secondary=esc(item.get("accent_color","#5f789c")),esc(item["title"]),esc(item["language"]),esc(item["primary_genre"]),esc(item.get("secondary_genre") or "")
     rating=float(item.get("avg_rating",0))
@@ -864,42 +901,16 @@ def title_card_html(item,personalized=False,primary_language=None,secondary_lang
     feedback_user_query = quote(str(feedback_user_id or ""), safe="")
     feedback_movie_query = quote(str(movie_id), safe="")
     pref_html = f'''<div class="card-pref-actions" aria-label="Feedback for {title}"><a class="pref-btn pref-like{like_cls}" title="Like" aria-label="Like {title}" href="?pref_movie={feedback_movie_query}&amp;pref_action=like&amp;pref_user={feedback_user_query}">👍</a><a class="pref-btn pref-dislike{dislike_cls}" title="Dislike" aria-label="Dislike {title}" href="?pref_movie={feedback_movie_query}&amp;pref_action=dislike&amp;pref_user={feedback_user_query}">👎</a></div>'''
-    detail_href = f'?detail_movie={feedback_movie_query}&amp;detail_user={feedback_user_query}'
+    platforms = movie_platforms(item)
+    platform_badge = platform_badge_html(platforms[0], compact=True) if platforms else ""
+    platform_rows = "".join(platform_badge_html(platform) for platform in platforms)
+    availability_html = f'<div class="album-platforms"><span class="album-platforms-label">Available on</span>{platform_rows}</div>' if platform_rows else '<div class="album-platform-empty">Availability is not listed for this catalog title.</div>'
+    expanded = f'''<div class="album-expanded"><div class="album-expanded-inner"><div class="album-expanded-poster" style="background:{accent}"><span>{language}</span><strong>{esc(movie_id)}</strong><span>{esc(item["release_year"])}</span></div><div class="album-expanded-copy"><h3>{title}</h3><div class="album-expanded-meta">{language} · {genre} · {esc(item["duration_min"])} min · ★ {rating:.1f}/5</div><p>{esc(item.get("synopsis") or "A StreamGlass catalog title.")}</p></div>{availability_html}</div></div>'''
 
-    return f'''<article class="title-card" id="card-{movie_id}"><a class="title-card-open" href="{detail_href}" aria-label="Open details for {title}"><div class="title-top"><div class="poster-swatch" style="background:{accent}"><span class="poster-id">{esc(movie_id)}</span><span class="poster-year">{esc(item["release_year"])}</span></div><div class="title-detail"><div class="title-meta"><span>{language} · {genre}</span>{status}</div><div class="title-name">{title}</div><p>{secondary} · {esc(item["duration_min"])} min</p></div></div></a><div class="card-foot"><span class="card-foot-reason">{reason}</span>{pref_html}</div></article>'''
-def title_card(item,personalized=False,primary_language=None,secondary_language=None,user_prefs=None,feedback_user_id=None):
-    st.markdown(title_card_html(item, personalized, primary_language, secondary_language, user_prefs, feedback_user_id), unsafe_allow_html=True)
-
-@st.dialog("Title details", width="large")
-def show_movie_detail(movie, subscriber):
-    cast = movie.get("cast_members", movie.get("cast", []))
-    if isinstance(cast, str):
-        try:
-            import json
-            cast = json.loads(cast)
-        except Exception:
-            cast = [cast]
-    cast_text = " · ".join(str(person) for person in (cast or [])) or "Cast details unavailable"
-    accent = esc(movie.get("accent_color", "#5f789c"))
-    st.markdown(
-        f'''<div class="movie-detail-card"><div class="movie-detail-poster" style="background:{accent}"><span>{esc(movie.get("language", "Regional"))}</span><strong>{esc(movie.get("movie_id", "SG"))}</strong><span>{esc(movie.get("release_year", ""))}</span></div><div class="movie-detail-copy"><h3>{esc(movie.get("title", "Title"))}</h3><div class="movie-detail-meta">{esc(movie.get("primary_genre", ""))} · {esc(movie.get("secondary_genre") or "Feature")} · {esc(movie.get("duration_min", ""))} min · ★ {float(movie.get("avg_rating", 0)):.1f}/5</div><p>{esc(movie.get("synopsis") or "A StreamGlass catalog title.")}</p><div class="movie-detail-cast"><b>Director</b> · {esc(movie.get("director") or "Independent")}<br><b>Cast</b> · {esc(cast_text)}</div></div></div>''',
-        unsafe_allow_html=True,
-    )
-    left, _, like_col, dislike_col = st.columns([1.9, 2.3, 1, 1], gap="small")
-    with left:
-        st.caption("Your feedback updates this subscriber’s recommendations.")
-    with like_col:
-        if st.button("👍", key=f"detail_like_{movie['movie_id']}", help="Like this title", use_container_width=True):
-            save_preference(subscriber.user_id, movie["movie_id"], "like")
-            engine.refresh()
-            st.session_state.pop("studio_detail_movie", None)
-            st.rerun()
-    with dislike_col:
-        if st.button("👎", key=f"detail_dislike_{movie['movie_id']}", help="Dislike this title", use_container_width=True):
-            save_preference(subscriber.user_id, movie["movie_id"], "dislike")
-            engine.refresh()
-            st.session_state.pop("studio_detail_movie", None)
-            st.rerun()
+    album_id = f"album-{rail_group}-{movie_id}"
+    return f'''<article class="title-card" id="card-{movie_id}"><details class="movie-album" id="{esc(album_id)}" data-movie-id="{esc(movie_id)}" name="streamglass-selected-movie"><summary aria-label="Show details for {title}"><div class="title-top"><div class="poster-swatch" style="background:{accent}"><span class="poster-id">{esc(movie_id)}</span><span class="poster-year">{esc(item["release_year"])}</span></div><div class="title-detail"><div class="title-meta"><span>{language} · {genre}</span>{status}</div><div class="title-name">{title}</div><p>{secondary} · {esc(item["duration_min"])} min</p></div></div></summary>{expanded}<div class="card-foot"><span class="card-foot-reason">{reason}</span>{platform_badge}{pref_html}</div></details></article>'''
+def title_card(item,personalized=False,primary_language=None,secondary_language=None,user_prefs=None,feedback_user_id=None,rail_group="catalog"):
+    st.markdown(title_card_html(item, personalized, primary_language, secondary_language, user_prefs, feedback_user_id, rail_group), unsafe_allow_html=True)
 def profile_surface(subscriber,history_size):
     tags="".join(f'<span class="chip">{esc(genre)}</span>' for genre in subscriber.preferred_genres)
     st.markdown(f'''<section class="profile-card"><div><div class="profile-title">{esc(subscriber.name)} <span style="color:#86868b;font-weight:500;font-size:.83rem">· {esc(subscriber.user_id)} · {subscriber.age}</span></div><div class="profile-copy">{esc(subscriber.persona_desc)}</div></div><div class="chip-row"><span class="chip chip-blue">{esc(subscriber.primary_language)}</span><span class="chip">{esc(subscriber.secondary_language or "No secondary language")}</span>{tags}<span class="chip">{history_size} watched</span></div></section>''',unsafe_allow_html=True)
@@ -1187,15 +1198,8 @@ elif st.session_state.current_module == "studio":
         # Browse rails keep the existing card treatment while allowing Netflix-style catalog exploration.
         catalog_movies = database.get_all_movies()
         catalog_size = len(catalog_movies)
-        detail_movie_id = st.session_state.get("studio_detail_movie")
-        if detail_movie_id:
-            detail_rows = catalog_movies[catalog_movies["movie_id"] == detail_movie_id]
-            if detail_rows.empty:
-                st.session_state.pop("studio_detail_movie", None)
-            else:
-                show_movie_detail(detail_rows.iloc[0].to_dict(), subscriber)
         st.markdown('<div class="feed-head feed-head-popular"><h2>Popular Now</h2><span>STATIC BASELINE</span></div><p class="feed-copy">The same ordering is delivered to every subscriber, regardless of language or prior viewing.</p>',unsafe_allow_html=True)
-        popular_cards = "".join(title_card_html(item, primary_language=subscriber.primary_language, secondary_language=subscriber.secondary_language, user_prefs=subscriber.preferences, feedback_user_id=subscriber.user_id) for item in engine.get_static_popular_feed(limit=catalog_size))
+        popular_cards = "".join(title_card_html(item, primary_language=subscriber.primary_language, secondary_language=subscriber.secondary_language, user_prefs=subscriber.preferences, feedback_user_id=subscriber.user_id, rail_group="popular") for item in engine.get_static_popular_feed(limit=catalog_size))
         st.markdown(f'<div class="studio-browse-rail" aria-label="Popular titles">{popular_cards}</div>', unsafe_allow_html=True)
 
         # Browse All Movies: complete catalog with exact matching album cards and dynamic genre filters
@@ -1209,7 +1213,7 @@ elif st.session_state.current_module == "studio":
         if selected_browse_genre != "All genres":
             browse_items = [m for m in browse_items if m["primary_genre"] == selected_browse_genre]
         if browse_items:
-            browse_cards = "".join(title_card_html(item, primary_language=subscriber.primary_language, secondary_language=subscriber.secondary_language, user_prefs=subscriber.preferences, feedback_user_id=subscriber.user_id) for item in browse_items)
+            browse_cards = "".join(title_card_html(item, primary_language=subscriber.primary_language, secondary_language=subscriber.secondary_language, user_prefs=subscriber.preferences, feedback_user_id=subscriber.user_id, rail_group="catalog") for item in browse_items)
             st.markdown(f'<div class="studio-browse-rail" aria-label="Browse all movies">{browse_cards}</div>', unsafe_allow_html=True)
         else:
             st.info("No titles available in this genre.")
@@ -1223,7 +1227,7 @@ elif st.session_state.current_module == "studio":
         if selected_genre != "All genres":
             recommendations = [item for item in recommendations if item["primary_genre"] == selected_genre]
         if recommendations:
-            recommendation_cards = "".join(title_card_html(item, personalized=True, user_prefs=subscriber.preferences, feedback_user_id=subscriber.user_id) for item in recommendations)
+            recommendation_cards = "".join(title_card_html(item, personalized=True, user_prefs=subscriber.preferences, feedback_user_id=subscriber.user_id, rail_group="personal") for item in recommendations)
             st.markdown(f'<div class="studio-browse-rail" aria-label="Personalized recommendations">{recommendation_cards}</div>', unsafe_allow_html=True)
         else:
             st.info("This subscriber has no remaining unwatched titles in this genre.")
